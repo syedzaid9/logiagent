@@ -1,0 +1,15 @@
+# Root .dockerignore
+.git
+.gitignore
+.env
+.pytest_cache
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.Python
+node_modules
+dist
+.vscode
+.idea
+*.log
