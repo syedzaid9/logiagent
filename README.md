@@ -1,270 +1,648 @@
-# LogiAgent — AI Logistics Operations Agent
+<div align="center">
 
-> **Production-grade AI logistics operations platform powered by LangGraph, Real Tool Calling, RAG, Predictive ML, and PostgreSQL.**
+# 🚚 LogiAgent
 
-[![FastAPI](https://img.shields.io/badge/FastAPI-0.111.0-009688?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
-[![LangGraph](https://img.shields.io/badge/LangGraph-1.2-7C3AED?logo=python&logoColor=white)](https://github.com/langchain-ai/langgraph)
-[![React](https://img.shields.io/badge/React-18.3-61DAFB?logo=react&logoColor=black)](https://reactjs.org)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.4-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org)
-[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-336791?logo=postgresql&logoColor=white)](https://www.postgresql.org)
-[![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker&logoColor=white)](https://www.docker.com)
+**AI-Powered Logistics Management and Intelligent Operations Platform**
+
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.111.0-009688?style=flat-square&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
+[![Python](https://img.shields.io/badge/Python-3.12-3776AB?style=flat-square&logo=python&logoColor=white)](https://www.python.org/)
+[![LangGraph](https://img.shields.io/badge/LangGraph-0.1.0-7C3AED?style=flat-square&logo=python&logoColor=white)](https://github.com/langchain-ai/langgraph)
+[![React](https://img.shields.io/badge/React-18.3-61DAFB?style=flat-square&logo=react&logoColor=black)](https://react.dev/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.4-3178C6?style=flat-square&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![Vite](https://img.shields.io/badge/Vite-5.3-646CFF?style=flat-square&logo=vite&logoColor=white)](https://vitejs.dev/)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-3.4-38B2AC?style=flat-square&logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-336791?style=flat-square&logo=postgresql&logoColor=white)](https://www.postgresql.org/)
+[![Supabase](https://img.shields.io/badge/Supabase-pgvector-3ECF8E?style=flat-square&logo=supabase&logoColor=white)](https://supabase.com/)
+[![Redis](https://img.shields.io/badge/Redis-7-DC382D?style=flat-square&logo=redis&logoColor=white)](https://redis.io/)
+[![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?style=flat-square&logo=docker&logoColor=white)](https://www.docker.com/)
+
+<p align="center">
+  <a href="#-project-overview">Overview</a> •
+  <a href="#-key-features">Key Features</a> •
+  <a href="#%EF%B8%8F-system-architecture">Architecture</a> •
+  <a href="#-data-flow">Data Flow</a> •
+  <a href="#-role-based-access-control-rbac">RBAC</a> •
+  <a href="#-ai--rag-architecture">AI & RAG</a> •
+  <a href="#%EF%B8%8F-database-architecture">Database</a> •
+  <a href="#-quick-start">Quick Start</a>
+</p>
+
+> 🚀 **Live Demo:** Deployment pending
+>
+> 📚 **API Documentation:** `http://localhost:8000/docs` (Swagger UI) & `http://localhost:8000/redoc` (ReDoc)
+>
+> 💻 **GitHub Repository:** [https://github.com/syedzaid9/logiagent](https://github.com/syedzaid9/logiagent)
+
+</div>
 
 ---
 
-## 1. Project Overview
-**LogiAgent** is an enterprise AI-driven supply chain operations hub. It positions an autonomous LangGraph agent between logistics operators (Logistics Managers, Dispatchers, Operations Teams) and systems of record. Rather than generating hallucinated responses, LogiAgent dynamically invokes specialized operational tools, accesses real-time telemetry from databases, calculates optimal routes, predicts delay risks using ML models, and grounds compliance queries in company Standard Operating Procedures (SOPs).
+## 📖 Table of Contents
+1. [Project Overview](#-project-overview)
+2. [Key Features](#-key-features)
+3. [Visual Showcase](#-visual-showcase)
+4. [System Architecture](#%EF%B8%8F-system-architecture)
+5. [Data Flow](#-data-flow)
+6. [Role-Based Access Control (RBAC)](#-role-based-access-control-rbac)
+7. [AI & RAG Architecture](#-ai--rag-architecture)
+8. [Database Architecture](#%EF%B8%8F-database-architecture)
+9. [Project Structure](#-project-structure)
+10. [Technology Stack](#%EF%B8%8F-technology-stack)
+11. [Docker Architecture](#-docker-architecture)
+12. [Quick Start & Local Setup](#-quick-start)
+13. [Testing & Verification](#-testing--verification)
 
 ---
 
-## 2. Problem Statement
-Logistics managers and dispatchers routinely manage dozens of disconnected systems: GPS telematics, TMS platforms, driver hours-of-service logs, weather feeds, and complex regulatory compliance manuals. When exceptions occur (traffic jams, mechanical breakdowns, failed deliveries), determining the right vehicle, calculating detour costs, and verifying company policy requires extensive manual effort.
+## 🎯 Project Overview
 
-**LogiAgent solves this by providing a unified conversational and operational cockpit powered by real tool-calling agentic AI.**
+Logistics managers, dispatchers, fleet directors, and drivers operate in high-friction environments requiring data from disparate systems: live GPS trackers, driver Hours of Service (HOS) logs, vehicle payload constraints, route delay predictions, and dense standard operating procedure (SOP) compliance manuals.
+
+**LogiAgent** solves this operational fragmentation by integrating a full-featured logistics telemetry platform with an autonomous **LangGraph-driven AI operations agent**. Rather than relying on static dashboards or ungrounded generative AI, LogiAgent connects natural language queries directly to live database telemetry, predictive machine learning models, and a vector-indexed compliance knowledge base.
+
+```
+Logistics Operators (Manager | Dispatcher | Fleet | Driver | Analyst | Ops | Admin)
+                                      │
+                                      ▼
+             React 18 + TypeScript + Vite + Tailwind CSS Frontend
+                                      │
+                                HTTPS / REST
+                                      │
+                                      ▼
+                      FastAPI Backend & Security Gateway
+                                      │
+                                      ▼
+                     LogiAgent LangGraph Reasoning Core
+                                      │
+             ┌────────────────────────┼────────────────────────┐
+             ▼                        ▼                        ▼
+     9 Operational Tools      RAG Knowledge Base      ML Predictors
+  (Tracking, Fleet, Routes,    (pgvector SOPs)     (Delay Risk, ETA,
+   HOS, Costs, Analytics)                            Demand Forecast)
+             │                        │                        │
+             └────────────────────────┼────────────────────────┘
+                                      ▼
+               PostgreSQL 16 (pgvector) / SQLite + Redis Cache
+```
+
+### Core Problems Solved
+- **Real-Time Visibility:** Instant multi-parameter tracking across 36 pre-seeded shipments, 12 vehicles, and 12 commercial drivers spanning 15 distribution centers.
+- **Explainable Anomaly & Delay Prediction:** Machine learning models for delay classification, dynamic ETA calculation, and cost optimization.
+- **Grounded Compliance & Policy Retrieval:** Semantic vector search across 6 company SOP documents (cold chain, detention charges, driver safety, failed deliveries, HAZMAT).
+- **Zero-Hallucination Operations:** Autonomous tool-calling workflow with deterministic fallback execution and full step-by-step reasoning traces.
 
 ---
 
-## 3. Key Features
-- 🧠 **LangGraph Orchestrated AI Core**: StateGraph agent executing intent classification, multi-tool chaining, and grounded reasoning.
-- 🛠️ **9 Specialized Agent Tools**: Tracking, vehicle availability matching, driver HOS management, route optimization, dynamic ETA prediction, delay risk classification, cost modeling, logistics analytics, and notification dispatches.
-- 📦 **Shipment & Fleet Telemetry Management**: 36 pre-seeded shipments, 12 vehicles, and 12 drivers across 15 distribution hubs with live coordinates, delay badges, and status transition audit logs.
-- 🗺️ **Interactive Route Visualizer**: Dynamic continental map with turn-by-turn waypoints, traffic condition indicators, polyline corridor rendering, and cost estimators.
-- 📜 **RAG Policy Knowledge Base**: Vector-indexed company SOPs covering Failed Deliveries (`SOP-LOG-02`), Cold Chain Compliance (`SOP-LOG-03`), Driver Safety & HOS (`SOP-LOG-04`), Detention & Demurrage (`SOP-LOG-05`), and HAZMAT Regulations (`SOP-LOG-06`).
-- 📊 **Predictive ML & Analytics Dashboard**: Feature-based delay risk predictor, time-series 7-day demand volume forecaster, delay root cause analysis, and cost optimization breakdown.
-- 🔔 **Event-Driven Notification Center**: Automated multi-channel alerts (In-App, Email, SMS, Push) with priority filters.
-- 🔒 **Enterprise RBAC Security**: JWT authentication with persona role-switching for Logistics Managers, Dispatchers, Operations Leads, and Admins.
+## ✨ Key Features
+
+### 🔐 Authentication & Access Governance
+- **JWT-Based Authentication:** Secure token generation with password hashing via passlib (`bcrypt`).
+- **Granular RBAC System:** 7 distinct system roles with individual permissions mapping to API routes and UI views.
+- **Account Lifecycle & Approval Hierarchy:** User invitation token workflow, activation, approval requirements per role, and suspension safeguards.
+- **Security Middlewares:** Request correlation tracking (`X-Request-ID`), structured logging, security headers (CSP, HSTS, X-Frame-Options), and sliding-window rate limiting.
+
+### 📦 Shipment Management & Live Tracking
+- **Lifecycle Status Tracking:** Full status progression (`Created` → `Dispatched` → `In Transit` → `Out for Delivery` → `Delivered` / `Delayed` / `Failed Delivery` / `Cancelled`).
+- **Real-Time Telemetry:** Live coordinates, remaining distance, speed, temperature status (cold chain), and estimated vs. actual timestamps.
+- **Audit History Trail:** Immutable timeline logging checkpoints, status updates, and responsible entities.
+- **CRUD & Filtering:** Filter by status, destination hub, delay severity, carrier, and assigned driver.
+
+### 🚛 Fleet & Driver Telemetry
+- **Vehicle Roster & Capacity Matching:** Track payload capacity (kg), volume ($m^3$), fuel levels, maintenance states, and current driver pairings across multiple vehicle types (Dry Van, Reefer, Flatbed, Box Truck, Sprinter).
+- **Driver HOS & Compliance Management:** Track CDL license classes, DOT Hours-of-Service remaining (driving vs. on-duty limits), safety ratings, and availability.
+
+### 🗺️ Route Intelligence & Corridor Optimization
+- **Interactive Route Visualizer:** Continental waypoint planning, polyline rendering, and highway corridor visualization.
+- **Dynamic ETA Calculation:** Transit calculations factoring in average speed, traffic slowdown factors, and mandatory rest stops.
+- **Cost Modeling Engine:** Algorithmic calculation of trip costs including fuel consumption, driver hourly wages, toll gates, and maintenance allocations.
+
+### 📊 Predictive ML & Operations Analytics
+- **Delay Risk Classifier:** Multi-factor delay risk scoring based on distance, traffic conditions, weather factors, and current transit variance.
+- **Demand Volume Forecaster:** 7-day predictive time-series volume forecasting with confidence intervals.
+- **Logistics KPI Dashboard:** Real-time metrics for on-time delivery rate, fleet capacity utilization, active exceptions, and financial spend per kilometer.
+
+### 🤖 LangGraph AI Operations Agent
+- **Intent Parsing & Parameter Extraction:** Automatic identification of shipment codes (`SHP-XXXX`), vehicle IDs (`TRK-XXX`), driver codes (`DRV-XXX`), weights, and query intents.
+- **Multi-Tool Orchestration:** Autonomous execution of 9 specialized logistics tools with role-scoped permission guards.
+- **Transparent Execution Trace:** Returns structured UI cards alongside a complete step-by-step trace of actions performed and tool execution latencies.
+- **Dual-Engine Architecture:** Integrates Gemini and OpenAI LLMs with an automatic deterministic fallback engine for zero-dependency local operation.
+
+### 📜 RAG Policy Knowledge Base
+- **Vector-Indexed SOPs:** 6 complete Standard Operating Procedures indexed via dense embeddings into Supabase `pgvector` / local vector storage.
+- **Role-Scoped Policy Retrieval:** Cosine similarity search with authorization filtering so drivers and dispatchers only retrieve authorized documentation.
+
+### 🔔 Event-Driven Notification & Alert Center
+- **Alert Lifecycle Management:** Alert generation, status progression (`active` → `acknowledged` → `resolved`), and deduplication indexing.
+- **Multi-Channel Dispatch:** Simulated multi-channel alert delivery (In-App, Email, SMS, Push) filtered by severity (`LOW`, `MEDIUM`, `HIGH`, `CRITICAL`).
 
 ---
 
-## 4. System Architecture
-LogiAgent is built across 10 functional layers based directly on the provided system architecture specification:
+## 📸 Visual Showcase
 
-```text
-Logistics Operators (Manager | Dispatcher | Operations)
-                      ↓
-          React + TypeScript Frontend
-                      ↓
-          API Gateway / FastAPI Backend
-                      ↓
-      LogiAgent LangGraph Reasoning Core
-                      ↓
-    ┌─────────────────┼─────────────────┐
-    ▼                 ▼                 ▼
-Agent Tools (9)   RAG Vector Store   ML Predictors
-    │                 │                 │
-    └─────────────────┼─────────────────┘
-                      ▼
-         PostgreSQL / SQLite Database
+> 📸 **Screenshots:** Application interface screenshots can be added here following deployment or demo environment capture.
+
+LogiAgent provides a comprehensive user interface built with React, TypeScript, and Tailwind CSS:
+
+1. **Role-Specific Dashboards:** 7 tailored cockpit views for Admin, Logistics Manager, Dispatcher, Fleet Manager, Driver, Analyst, and Operations Team.
+2. **Interactive AI Assistant:** Slide-out conversational panel featuring quick prompts, markdown output, live execution traces, and structured telemetry cards.
+3. **Route Visualizer:** Map visualization showing route corridors, traffic indicators, and turn-by-turn waypoints.
+4. **Shipment Command Center:** Searchable, sortable freight grid with real-time status badges, delay alerts, and detailed modal dialogs.
+5. **Fleet & Driver Roster:** Asset management grid with capacity utilization gauges, HOS compliance meters, and vehicle health metrics.
+6. **Policy Explorer:** Semantic SOP document viewer with instant vector query search and source citations.
+7. **System Settings:** Administrative configuration for SLA targets, rate limits, notification preferences, and AI provider selection.
+
+---
+
+## 🏗️ System Architecture
+
+```mermaid
+graph TD
+    subgraph Client ["Frontend Layer (React 18 + TypeScript + Vite)"]
+        UI[User Interface & Dashboards]
+        AC[Auth Context & Role State]
+        Chat[AI Assistant Drawer & Widgets]
+        MapComp[Route Visualizer Map]
+    end
+
+    subgraph Gateway ["API Gateway Layer (FastAPI)"]
+        MW[Security, Rate Limiting & Correlation Middleware]
+        AuthRouter["/api/v1/auth & /users"]
+        ShipRouter["/api/v1/shipments"]
+        FleetRouter["/api/v1/vehicles & /drivers"]
+        RouteRouter["/api/v1/routes"]
+        AnalyticsRouter["/api/v1/analytics & /ml"]
+        RAGRouter["/api/v1/rag"]
+        AgentRouter["/api/v1/agent"]
+    end
+
+    subgraph AgentCore ["AI Agent Core (LangGraph)"]
+        StateGraph[StateGraph Orchestrator]
+        IntentParser[Intent Classifier & Parser]
+        ToolRouter[Role-Scoped Tool Dispatcher]
+        ResponseGen[Reasoning & Trace Synthesizer]
+    end
+
+    subgraph ToolsLayer ["Specialized Operational Tools (9)"]
+        T1[ShipmentTrackingTool]
+        T2[VehicleAvailabilityTool]
+        T3[DriverManagementTool]
+        T4[RouteOptimizationTool]
+        T5[ETACalculationTool]
+        T6[DelayDetectionTool]
+        T7[CostCalculationTool]
+        T8[LogisticsAnalyticsTool]
+        T9[NotificationTool]
+    end
+
+    subgraph Intelligence ["ML & RAG Intelligence"]
+        MLModels[Predictive ML Models<br/>Delay Risk / Demand / ETA]
+        Embeddings[Sentence Transformers / Gemini Embeddings]
+        VectorStore[pgvector Cosine Search Store]
+    end
+
+    subgraph Storage ["Data & Cache Layer"]
+        DB[(PostgreSQL 16 / SQLite)]
+        Redis[(Redis 7 Cache)]
+    end
+
+    UI -->|REST / Bearer Token| MW
+    MW --> AuthRouter & ShipRouter & FleetRouter & RouteRouter & AnalyticsRouter & RAGRouter & AgentRouter
+
+    AgentRouter --> StateGraph
+    StateGraph --> IntentParser --> ToolRouter
+    ToolRouter --> T1 & T2 & T3 & T4 & T5 & T6 & T7 & T8 & T9
+    ToolRouter --> VectorStore
+    ToolRouter --> MLModels
+    T1 & T2 & T3 & T4 & T5 & T6 & T7 & T8 & T9 --> DB
+    RAGRouter --> VectorStore
+    AnalyticsRouter --> MLModels
+    ShipRouter & FleetRouter & RouteRouter --> DB
+    Gateway -.-> Redis
+    ResponseGen --> AgentRouter
+```
+
+### Component Breakdown
+- **Presentation Layer (`/frontend`):** Built with React 18, Vite, TypeScript, and Tailwind CSS. Features modular views, role-based conditional rendering via `PermissionGate`, Recharts data visualizations, and an embedded AI command drawer.
+- **Backend API Gateway (`/backend/app`):** FastAPI application with automatic OpenAPI docs, Pydantic v2 validation, passlib security, and structured request logging.
+- **LangGraph Agent Engine (`/backend/app/agents`):** StateGraph workflow managing conversational state, intent resolution, tool execution, and grounded answer synthesis.
+- **Specialized Tool Suite (`/backend/app/tools`):** 9 modular tool implementations executing direct database queries, telemetry math, and automated alerts.
+- **Machine Learning Layer (`/backend/app/ml`):** Python-based predictive algorithms for transit delay classification, route efficiency scoring, and demand forecasting.
+- **RAG Subsystem (`/backend/app/rag`):** Vector search pipeline with chunking, dense vector embeddings (`all-MiniLM-L6-v2`), and cosine distance matching via Supabase `pgvector`.
+- **Persistence Layer (`/backend/app/models`):** SQLAlchemy 2.0 ORM models supporting PostgreSQL 16 (production) and SQLite (local zero-dependency development).
+
+---
+
+## 🔄 Data Flow
+
+### 1. User Authentication Flow
+```mermaid
+sequenceDiagram
+    autonumber
+    actor User
+    participant Frontend
+    participant API as FastAPI (/api/v1/auth)
+    participant DB as Database (PostgreSQL/SQLite)
+
+    User->>Frontend: Enter credentials (email & password)
+    Frontend->>API: POST /auth/login {email, password}
+    API->>DB: Query User record & active status
+    DB-->>API: User model & hashed password
+    API->>API: Verify password (bcrypt) & verify approval status
+    API->>API: Generate signed JWT (subject, role, permissions)
+    API-->>Frontend: TokenResponse {access_token, user_profile}
+    Frontend->>Frontend: Store token in state & update AuthContext
+    Frontend-->>User: Render role-specific dashboard
+```
+
+### 2. Autonomous AI Agent Query Flow
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Operator
+    participant Frontend
+    participant AgentAPI as FastAPI (/api/v1/agent/chat)
+    participant LangGraph as LangGraph Agent Core
+    participant Tools as Operational Tools (9)
+    participant RAG as Vector Store (pgvector)
+    participant DB as Database
+
+    Operator->>Frontend: Submit prompt ("Where is shipment SHP-1001?")
+    Frontend->>AgentAPI: POST /agent/chat {message, role}
+    AgentAPI->>LangGraph: Initialize AgentState with query & user role
+    LangGraph->>LangGraph: Parse intent & extract entities (SHP-1001)
+    LangGraph->>LangGraph: Validate role permissions (shipments:read)
+    
+    alt Operational Query
+        LangGraph->>Tools: Invoke ShipmentTrackingTool(SHP-1001)
+        Tools->>DB: Query shipment, driver, vehicle & history tables
+        DB-->>Tools: Telemetry data & checkpoint history
+        Tools-->>LangGraph: Structured tracking payload
+    else Policy / SOP Query
+        LangGraph->>RAG: Query Vector Store with role filter
+        RAG-->>LangGraph: Top matching SOP chunks (cosine similarity)
+    end
+
+    LangGraph->>LangGraph: Synthesize grounded response & record action trace
+    LangGraph-->>AgentAPI: AgentResponse {response, tools_used, actions_performed, widgets}
+    AgentAPI-->>Frontend: Return response payload (JSON)
+    Frontend-->>Operator: Display markdown response, telemetry card & trace accordion
 ```
 
 ---
 
-## 5. Technology Stack
-- **Frontend**: React 18, TypeScript, Vite, Tailwind CSS, Recharts, Lucide Icons.
-- **Backend**: Python 3.12, FastAPI, Pydantic v2, SQLAlchemy 2.0, Uvicorn.
-- **AI & Agent Orchestration**: LangGraph, LangChain, Gemini API / OpenAI API integration + deterministic fallback execution engine.
-- **Data & Storage**: PostgreSQL 16 (production), SQLite (local zero-setup), Redis 7.
-- **DevOps**: Docker, Docker Compose, Nginx.
+## 👥 Role-Based Access Control (RBAC)
+
+LogiAgent implements a multi-tier RBAC system with 7 operational personas:
+
+| Role | Description | Key Permissions | Default Dashboard |
+|---|---|---|---|
+| **Admin** | Full system governance, security policies, and user lifecycle. | `*` (Full unrestricted system permissions) | **Admin Governance Cockpit** |
+| **Logistics Manager** | End-to-end supply chain operations, approvals, and executive analytics. | `shipments:manage`, `vehicles:manage`, `drivers:manage`, `routes:manage`, `analytics:read_all`, `agent:full_access` | **Logistics Manager Dashboard** |
+| **Dispatcher** | Active load dispatch, driver scheduling, and corridor optimization. | `shipments:manage`, `vehicles:read`, `drivers:read`, `routes:optimize`, `analytics:read_limited`, `agent:full_access` | **Dispatcher Operations Cockpit** |
+| **Fleet Manager** | Vehicle asset lifecycle, maintenance logs, and driver compliance. | `vehicles:manage`, `drivers:manage`, `shipments:read_all`, `telemetry:read`, `analytics:read_all`, `agent:full_access` | **Fleet & Asset Dashboard** |
+| **Driver** | Commercial freight operator with strictly self-scoped access. | `shipments:read_own`, `vehicles:read_own`, `drivers:read_own`, `routes:read_own`, `agent:driver_restricted` | **Driver Mobile/Route Portal** |
+| **Analyst** | Read-only business intelligence, SLA trends, and cost modeling. | `analytics:read_all`, `analytics:export`, `shipments:read_all`, `routes:read_all`, `agent:full_access` | **Supply Chain Analytics Hub** |
+| **Operations Team** | Terminal logistics personnel with operational read/update access. | `shipments:read_all`, `shipments:update`, `vehicles:read_all`, `drivers:read_all`, `agent:full_access` | **Operations Terminal Dashboard** |
+
+### Backend & Frontend Enforcement
+- **Backend Protection:** Endpoints are guarded via `has_permission(role, permission)` dependencies and database-level user lookup.
+- **Frontend Protection:** Components use `<PermissionGate permission="...">` wrappers to conditionally render UI controls, action buttons, and navigation tabs.
 
 ---
 
-## 6. AI Agent Workflow
-When a user submits an operational query:
-1. **Intent Understanding**: The `understand_intent` node parses the request, identifies logistics parameters (e.g. `SHP-1001`, `1500 kg`, `delay threshold`), and plans the tool execution chain.
-2. **Tool Execution**: The `execute_tools` node dispatches calls to the database and ML modules.
-3. **Reasoning & Response Generation**: The `generate_response` node synthesizes grounded results and outputs structured data widgets alongside a transparent **"Actions Performed"** trace.
+## 🤖 AI & RAG Architecture
 
----
+LogiAgent's intelligence layer combines LangGraph state management with dense vector retrieval:
 
-## 7. The 9 Agent Tools
+```mermaid
+graph LR
+    subgraph Ingestion ["SOP Document Ingestion"]
+        SOPs["Markdown SOPs (SOP-LOG-01 to 06)"]
+        Splitter["Semantic Section Parser"]
+        Model["Embedding Model (all-MiniLM-L6-v2)"]
+        Store[("pgvector / Local Store")]
+        SOPs --> Splitter --> Model --> Store
+    end
 
-| # | Tool Name | Capabilities |
-|---|---|---|
-| 1 | `ShipmentTrackingTool` | Real-time status lookup, coordinates, delay duration, and delivery history for any shipment code. |
-| 2 | `VehicleAvailabilityTool` | Queries fleet capacity by weight (e.g. 1500 kg), volume, vehicle type, and current location. |
-| 3 | `DriverManagementTool` | Queries driver availability, hours-of-service (HOS) remaining, license types, and active assignments. |
-| 4 | `RouteOptimizationTool` | Computes fastest/lowest-cost routes, highway corridors, traffic impact, and waypoints. |
-| 5 | `ETACalculationTool` | Computes dynamic arrival ETA factoring in transit speed, traffic delays, and mandatory rest stops. |
-| 6 | `DelayDetectionTool` | Detects delayed shipments, flags high-risk loads, and provides explainable root-cause factors. |
-| 7 | `CostCalculationTool` | Models fuel burn, driver wages, tolls, and maintenance costs per km and fleet-wide. |
-| 8 | `LogisticsAnalyticsTool` | Computes on-time delivery rate, fleet capacity utilization, delay distribution, and spend KPIs. |
-| 9 | `NotificationTool` | Dispatches automated alerts (Email, SMS, Push, In-App) for delays or exceptions. |
+    subgraph QueryPipeline ["Runtime Agent Query Pipeline"]
+        Prompt["User Query"]
+        Intent["Intent Classifier"]
+        Retriever["pgvector Cosine Search"]
+        LLM["Gemini / OpenAI / Deterministic Engine"]
+        Answer["Grounded Response + UI Payload"]
+        
+        Prompt --> Intent
+        Intent -->|Policy Query| Retriever
+        Store -.->|Top-K Chunks| Retriever
+        Retriever --> LLM
+        Intent -->|Operational Query| LLM
+        LLM --> Answer
+    end
+```
 
----
-
-## 8. RAG Knowledge Base
-
-LogiAgent includes 6 indexed logistics Standard Operating Procedures:
+### Indexed Standard Operating Procedures (SOPs)
 1. **`SOP-LOG-01`**: General Logistics Operations, Service Level Agreements (SLAs), and Proof of Delivery.
-2. **`SOP-LOG-02`**: Failed Delivery & Exception Handling Protocol (15-min driver hold, 24h grace period re-delivery, detention billing).
-3. **`SOP-LOG-03`**: Temperature-Controlled Cold Chain Operations (+2°C to +8°C protocols, pre-cooling, excursion procedures).
-4. **`SOP-LOG-04`**: Driver Hours of Service (HOS) & DOT Safety Regulations (11h driving limit, 14h duty window, 30m break).
-5. **`SOP-LOG-05`**: Detention, Demurrage & Accessorial Charges ($85/hr dry van, $110/hr reefer, 2h free time).
-6. **`SOP-LOG-06`**: Hazardous Materials (HAZMAT) Transport Protocol (49 CFR compliance, CDL-A endorsements, tunnel restrictions).
+2. **`SOP-LOG-02`**: Failed Delivery and Exception Handling Protocol (15-min hold, 24h grace period, detention billing).
+3. **`SOP-LOG-03`**: Cold Chain Management & Temperature Compliance (+2°C to +8°C requirements, excursion workflows).
+4. **`SOP-LOG-04`**: Commercial Driver Hours of Service (HOS) & DOT Safety Regulations (11h driving limit, 14h duty window).
+5. **`SOP-LOG-05`**: Detention, Demurrage & Accessorial Surcharges ($85/hr dry van, $110/hr reefer, 2h free time).
+6. **`SOP-LOG-06`**: Hazardous Materials (HAZMAT) Transport Protocol (49 CFR compliance, CDL endorsements).
+
+### Dual LLM Engine with Deterministic Fallback
+- **Cloud LLM Support:** Native integration with Google Gemini (`gemini-1.5-pro` / `gemini-1.5-flash`) and OpenAI (`gpt-4o` / `gpt-4o-mini`).
+- **Deterministic Fallback Engine:** When running offline or without API keys, LogiAgent automatically uses a local rule-and-template synthesis engine to ensure zero downtime and deterministic test passes.
 
 ---
 
-## 9. Database Schema
-- `users`: User credentials, roles (Admin, Logistics Manager, Dispatcher, Operations Team), timestamps.
-- `customers`: Customer codes, enterprise tiers, contact details.
-- `delivery_locations`: 15 national logistics distribution centers, warehouses, and customer sites with GPS coordinates.
-- `drivers`: License types, CDL numbers, ratings, remaining Hours of Service (HOS), assigned vehicles.
-- `vehicles`: Models, vehicle types (Dry Van, Reefer, Flatbed, Box Truck, Sprinter), payload capacity kg, current load, fuel level, GPS position.
-- `shipments`: Shipment codes (SHP-1001 to SHP-1036), origin/destination foreign keys, status, weight, ETA, delay minutes, risk scores.
-- `routes`: Polyline coordinates, planned vs actual distance/duration, traffic condition, waypoints JSON.
-- `transportation_costs`: Distance, fuel cost, labor cost, tolls, maintenance, total cost per trip.
-- `shipment_status_history`: Checkpoint audit events with timestamps and locations.
-- `notifications`: Alert records, channels (Email, SMS, Push, In-App), severity levels, read states.
+## 🗄️ Database Architecture
+
+LogiAgent uses SQLAlchemy 2.0 with migration scripts supporting **PostgreSQL 16** (with `pgvector`) and **SQLite** for zero-setup local execution.
+
+```mermaid
+erDiagram
+    users ||--o{ roles : "assigned"
+    roles ||--o{ role_permissions : "contains"
+    permissions ||--o{ role_permissions : "granted"
+    users ||--o{ approval_policies : "governed_by"
+    
+    customers ||--o{ shipments : "places"
+    delivery_locations ||--o{ shipments : "origin / destination"
+    drivers ||--o{ shipments : "assigned_to"
+    vehicles ||--o{ shipments : "transports"
+    
+    shipments ||--o{ routes : "follows"
+    shipments ||--o{ transportation_costs : "accrues"
+    shipments ||--o{ shipment_status_history : "tracks"
+    shipments ||--o{ orders : "fulfills"
+    
+    alerts ||--o{ shipments : "flags"
+    notifications ||--o{ users : "alerts"
+    documents ||--o{ document_chunks : "chunked_into"
+```
+
+### Core Database Entities
+- `users`: User profiles, email, hashed credentials, role references, activation tokens, approval states.
+- `roles` & `permissions`: RBAC catalog and many-to-many permission grants (`role_permissions`).
+- `approval_policies`: Role-based approval requirements and designated approver role chains.
+- `customers`: Enterprise customer profiles, accounts, and contact details.
+- `delivery_locations`: 15 logistics distribution centers, warehouses, and customer hubs with GPS coordinates.
+- `vehicles`: Fleet vehicles, models, types, payload capacity (kg), volume ($m^3$), fuel levels, and coordinates.
+- `drivers`: Commercial drivers, CDL license classes, remaining HOS driving/duty hours, safety ratings, and assigned vehicles.
+- `shipments`: 36 freight shipments (`SHP-1001` to `SHP-1036`), status, origin/destination hubs, weight, ETA, delay minutes, risk levels.
+- `routes`: Polyline coordinates, planned vs. actual distance/duration, traffic condition, waypoints JSON.
+- `transportation_costs`: Distance, fuel costs, labor wages, tolls, maintenance, and total cost per trip.
+- `shipment_status_history`: Checkpoint audit logs with status timestamps and notes.
+- `alerts`: Operational exceptions (`DELAY_RISK`, `HOS_VIOLATION`, `TEMPERATURE_EXCURSION`), deduplication keys, status (`active`, `acknowledged`, `resolved`).
+- `notifications`: User notification queue across Email, SMS, Push, and In-App channels.
+- `documents` & `document_chunks`: RAG vector catalog storing section text, metadata, and 384-dimensional vector embeddings.
+- `system_settings`: Organization parameters, SLA targets, rate limit settings, and security controls.
 
 ---
 
-## 10. API Documentation
-When running, FastAPI automatically serves interactive OpenAPI documentation at:
-- Swagger UI: `http://localhost:8000/docs`
-- ReDoc: `http://localhost:8000/redoc`
+## 📁 Project Structure
 
-Key endpoints:
-- `POST /api/v1/auth/login` — Authenticate and receive JWT token.
-- `GET /api/v1/shipments` — Filter, search, and list shipments.
-- `GET /api/v1/vehicles` — Query fleet availability and capacity.
-- `GET /api/v1/drivers` — Query driver roster and HOS status.
-- `GET /api/v1/routes/shipment/{code}` — Compute corridor and waypoints.
-- `GET /api/v1/analytics/dashboard` — Executive KPI summary and distributions.
-- `POST /api/v1/rag/query` — Semantic vector search across SOP documents.
-- `POST /api/v1/agent/chat` — LangGraph agent natural language query interface.
+```text
+logiagent/
+├── architecture/                   # System architecture specifications & documentation
+│   └── ARCHITECTURE.md             # Complete architecture specification
+├── backend/                        # FastAPI Backend & AI Services
+│   ├── app/
+│   │   ├── agents/                 # LangGraph Agent Core, state, prompts & LLM factory
+│   │   ├── api/                    # REST routers (v1: auth, shipments, fleet, routes, agent, etc.)
+│   │   ├── core/                   # Config, database engine, logging, security, rate limiter, middleware
+│   │   ├── data/                   # Database seeding scripts & initial datasets
+│   │   ├── ml/                     # Predictive ML models (Delay Risk, Demand, ETA, Cost)
+│   │   ├── models/                 # SQLAlchemy 2.0 ORM database models
+│   │   ├── rag/                    # RAG document loader, embeddings & pgvector store
+│   │   ├── schemas/                # Pydantic v2 request/response schemas
+│   │   ├── services/               # Core business services (Analytics, Cost, Traffic, Risk)
+│   │   └── tools/                  # 9 LangGraph operational tools
+│   ├── data/migrations/            # SQL migration scripts (RBAC, performance, AI intelligence)
+│   ├── tests/                      # Automated test suite (101 unit & integration tests)
+│   ├── Dockerfile                  # Production backend container definition
+│   ├── requirements.txt            # Python dependencies
+│   ├── main.py                     # Direct backend entrypoint
+│   └── verify_all_scenarios.py     # End-to-end AI agent verification script
+├── database/                       # Database migrations & backup recovery strategy
+│   ├── migrations/                 # PostgreSQL / Supabase SQL migrations
+│   └── backup_recovery_strategy.md # Backup & disaster recovery procedures
+├── frontend/                       # React 18 + TypeScript Frontend
+│   ├── src/
+│   │   ├── api/                    # API HTTP client & typed service endpoints
+│   │   ├── components/             # React UI components organized by domain
+│   │   │   ├── admin/              # User governance & account approval modals
+│   │   │   ├── analytics/          # Analytics dashboards & charts
+│   │   │   ├── auth/               # Login & invitation activation views
+│   │   │   ├── chat/               # LangGraph AI Assistant drawer & widgets
+│   │   │   ├── common/             # Reusable UI cards, badges, gates & skeletons
+│   │   │   ├── dashboard/          # 7 Role-specific dashboard views
+│   │   │   ├── fleet/              # Vehicle & driver roster tables & modals
+│   │   │   ├── layout/             # Header, sidebar & navigation controls
+│   │   │   ├── map/                # Route visualizer map component
+│   │   │   ├── notifications/      # Notification drawer & priority badges
+│   │   │   ├── rag/                # SOP policy explorer & search interface
+│   │   │   ├── settings/           # System settings management view
+│   │   │   └── shipments/          # Shipment tracking list & detail dialogs
+│   │   ├── context/                # AuthContext & global state management
+│   │   └── types/                  # TypeScript interface definitions
+│   ├── Dockerfile                  # Frontend container definition (Nginx multi-stage build)
+│   ├── nginx.conf                  # Nginx reverse proxy configuration
+│   ├── package.json                # Frontend npm dependencies & scripts
+│   ├── tailwind.config.js          # Tailwind CSS theme configuration
+│   └── vite.config.ts              # Vite build configuration
+├── docker-compose.yml              # Multi-container orchestration (Backend, Frontend, Postgres, Redis)
+├── .env.example                    # Environment variable configuration template
+├── start_all.bat                   # One-click Windows startup script (Backend + Frontend)
+├── start_all.ps1                   # PowerShell startup script (Backend + Frontend)
+├── start_backend.bat               # Backend-only Windows launcher
+├── start_frontend.bat              # Frontend-only Windows launcher
+└── README.md                       # Master project documentation
+```
 
 ---
 
-## 11. Quick Start & Local Setup
+## 🛠️ Technology Stack
 
-### Prerequisites
-- Python 3.11+
-- Node.js 18+ & npm
-- Docker & Docker Compose (optional for containerized run)
-
-### Option A: One-Click Quick Start (Windows)
-Double-click `start_all.bat` (or run `.\start_all.ps1`) from the project root. This automatically starts both the backend API and frontend dev server.
-
-### Option B: Manual Command-Line Setup
-
-1. **Start Backend Server:**
-   ```bash
-   cd backend
-   pip install -r requirements.txt
-   py -3.12 -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
-   # Or: python main.py
-   ```
-
-2. **Start Frontend Client (in a separate terminal):**
-   ```bash
-   cd frontend
-   npm install
-   npm run dev
-   ```
-
-3. **Access the application:**
-   - **Frontend UI**: [http://localhost:5173](http://localhost:5173)
-   - **Backend API Docs (Swagger)**: [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)
+| Layer | Technology | Version | Purpose |
+|---|---|---|---|
+| **Frontend Framework** | React | 18.3.1 | Core UI library |
+| **Language (Frontend)** | TypeScript | 5.4.5 | Type safety across UI components and API contracts |
+| **Build Tool** | Vite | 5.3.1 | Fast HMR development server and production bundler |
+| **Styling** | Tailwind CSS | 3.4.4 | Utility-first responsive design and design tokens |
+| **Data Visualization** | Recharts | 2.12.7 | Interactive charts (Fleet utilization, shipment status, trends) |
+| **Icons** | Lucide React | 0.395.0 | Modern UI icon library |
+| **Backend Framework** | FastAPI | 0.111.0 | High-performance Python async REST API |
+| **Language (Backend)** | Python | 3.12 | Core backend language |
+| **Data Validation** | Pydantic | 2.7.4+ | Request and response schema serialization |
+| **ORM & Database** | SQLAlchemy | 2.0.30+ | Object-relational mapping and SQL query abstraction |
+| **Security & Auth** | passlib + python-jose | 1.7.4 / 3.3.0 | Argon2/Bcrypt password hashing and JWT encoding |
+| **AI Orchestration** | LangGraph | 0.1.0+ | Stateful agent workflow and tool calling |
+| **Embeddings** | Sentence Transformers | 6.0.1 | Dense vector embedding model (`all-MiniLM-L6-v2`) |
+| **Database Engine** | PostgreSQL / SQLite | 16 / 3.x | Relational storage (Production PostgreSQL / Local SQLite) |
+| **Vector Search** | pgvector | Extension | Vector similarity search for RAG knowledge documents |
+| **Caching Layer** | Redis | 7-alpine | Session caching and rate limiting state |
+| **Containerization** | Docker & Compose | Compose v2 | Multi-container stack orchestration |
 
 ---
 
-## 12. Docker Compose Deployment
+## 🐳 Docker Architecture
 
-Run the complete multi-container stack (Backend, Frontend, PostgreSQL, Redis) with a single command:
+The repository includes a complete `docker-compose.yml` definition for running the containerized stack:
 
+| Service | Container Name | Image / Build Context | Internal Port | Host Port | Purpose |
+|---|---|---|---|---|---|
+| `postgres` | `logiagent-postgres` | `postgres:16-alpine` | `5432` | `5432` | Primary relational database |
+| `redis` | `logiagent-redis` | `redis:7-alpine` | `6379` | `6379` | In-memory cache & state |
+| `backend` | `logiagent-backend` | `./backend/Dockerfile` | `8000` | `8000` | FastAPI application server |
+| `frontend` | `logiagent-frontend` | `./frontend/Dockerfile` | `80` | `3000` & `5173` | React SPA served via Nginx |
+
+### Service Dependencies & Healthchecks
+- `backend` waits for `postgres` and `redis` to pass healthchecks before booting.
+- `frontend` waits for `backend` to pass the `/health` endpoint check before serving requests.
+
+To run the complete containerized stack:
 ```bash
 docker compose up --build
 ```
 
-- **Frontend Application**: `http://localhost:3000`
-- **FastAPI Backend & Swagger**: `http://localhost:8000/docs`
-- **PostgreSQL Database**: `localhost:5432`
+---
+
+## 🚀 Quick Start
+
+### Prerequisites
+- **Python:** 3.11 or 3.12
+- **Node.js:** 18+ & **npm:** 9+
+- **Git:** Installed and configured
+- **Docker & Docker Compose:** *(Optional, for containerized execution)*
 
 ---
 
-## 13. Default Demo Accounts
-
-| Role | Email | Password |
-|---|---|---|
-| **Logistics Manager** | `manager@logiagent.io` | `manager123` |
-| **Dispatcher** | `dispatcher@logiagent.io` | `dispatcher123` |
-| **Operations Team** | `ops@logiagent.io` | `ops123` |
-| **Admin** | `admin@logiagent.io` | `admin123` |
-
-*(You can also seamlessly toggle personas in real-time from the top navigation bar).*
-
----
-
-## 14. Verified AI Demo Scenarios
-
-LogiAgent comes with one-click chips in the AI Assistant to test all 7 core scenarios:
-
-### Scenario 1: Shipment Tracking
-- **User**: *"Where is shipment SHP-1001?"*
-- **Trace**: `Identified intent: Live Shipment Tracking` → `Checked shipment database for SHP-1001` → `Retrieved real-time telemetry for SHP-1001`
-- **Output**: Live location on I-80 corridor, origin (Chicago), destination (Dallas), vehicle (TRK-101), driver (Robert McCall), and projected ETA.
-
-### Scenario 2: Exception & Delay Filtering
-- **User**: *"Show all delayed shipments."*
-- **Trace**: `Identified intent: Filter Delayed Shipments` → `Queried delay detection model & evaluated bottleneck factors` → `Compiled status report`
-- **Output**: Structured markdown table with delayed shipments, delay durations, and root causes.
-
-### Scenario 3: Vehicle Availability & Capacity Matching
-- **User**: *"Which vehicle is available for a 1500 kg shipment?"*
-- **Trace**: `Identified intent: Fleet Vehicle Availability Check` → `Checked vehicle database for available units (1500 kg capacity)` → `Matched 6 suitable vehicles`
-- **Output**: Ranked list of vehicles with sufficient available capacity, fuel levels, and current locations.
-
-### Scenario 4: Route Optimization
-- **User**: *"Find the fastest route for SHP-1001."*
-- **Trace**: `Identified intent: Route Optimization for SHP-1001` → `Calculated optimal highway corridors and traffic conditions`
-- **Output**: Interstate corridor recommendation (I-90/I-80), distance (1,496 km), duration (21h 30m), traffic condition, and cost estimation.
-
-### Scenario 5: ML Delay Root-Cause Analysis
-- **User**: *"Why is SHP-1001 likely to be delayed?"*
-- **Trace**: `Identified intent: Delay Root-Cause Analysis` → `Evaluated delay risk model and generated explainable root-cause factors`
-- **Output**: Risk score (68/100, High), analysis of I-80 construction bottlenecks, weather impact, and driver HOS remaining hours.
-
-### Scenario 6: RAG Policy Compliance
-- **User**: *"What is the failed delivery policy?"*
-- **Trace**: `Analyzed query intent: Logistics Policy & SOP Retrieval` → `Queried Vector Knowledge Base` → `Retrieved grounded policy SOP-LOG-02`
-- **Output**: Grounded citation of `SOP-LOG-02` detailing mandatory 15-minute driver wait time, photographic evidence protocol, 24h grace period re-delivery, and storage surcharges.
-
-### Scenario 7: Executive Fleet Performance & Analytics
-- **User**: *"How is our fleet performing this month?"*
-- **Trace**: `Identified intent: Logistics KPI & Fleet Performance Analysis` → `Aggregated operational KPIs and fleet utilization metrics`
-- **Output**: Total active shipments, on-time SLA rate (94.2%), average load utilization (68.5%), and MTD transportation spend ($34,250).
-
----
-
-## 15. Testing & Quality Assurance
-
-Run the automated test suite covering all tools, authentication, RAG retriever, ML models, and agent scenarios:
-
+### 1. Clone the Repository
 ```bash
-cd backend
-python -m pytest tests -v
+git clone https://github.com/syedzaid9/logiagent.git
+cd logiagent
 ```
 
-**Results:** `26 passed, 0 failures (100% pass rate)`.
+---
+
+### 2. Environment Configuration
+Copy `.env.example` to `.env` in both the root and backend directories:
+```bash
+cp .env.example .env
+cp .env.example backend/.env
+```
+
+*(LogiAgent runs out of the box with zero external API keys using SQLite and the local deterministic AI engine. External keys for Gemini, OpenAI, or Supabase can be added optionally).*
 
 ---
 
-## 16. Cloud Deployment Architecture
+### 3. Launching the Application
 
-For production cloud deployment (AWS / GCP / Azure):
-- **Compute**: Containerized backend and agent on AWS ECS / GCP Cloud Run / Azure Container Apps.
-- **Database**: Managed PostgreSQL (AWS RDS / GCP Cloud SQL / Azure Database for PostgreSQL).
-- **Cache**: Managed Redis (AWS ElastiCache / GCP Memorystore).
-- **Static Assets**: Frontend CDN on AWS CloudFront + S3 / Cloudflare Pages.
-- **Secrets Management**: AWS Secrets Manager / GCP Secret Manager for API keys.
+#### Option A: One-Click Quick Start (Windows)
+Double-click [`start_all.bat`](file:///c:/Users/Zaids/Desktop/logistic%20agent/start_all.bat) or run the PowerShell script:
+```powershell
+.\start_all.ps1
+```
+*This automatically starts the FastAPI backend on port 8000 and the Vite frontend on port 5173 in separate windows.*
+
+#### Option B: Docker Compose (All Platforms)
+```bash
+docker compose up --build
+```
+
+#### Option C: Manual Command-Line Startup
+
+**Terminal 1 — Backend:**
+```bash
+cd backend
+pip install -r requirements.txt
+python -m app.data.seed_data
+python -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+```
+
+**Terminal 2 — Frontend:**
+```bash
+cd frontend
+npm install
+npm run dev
+```
 
 ---
 
-## 17. Future Enhancements
-- Real-time WebSockets telemetry streaming from physical IoT OBD-II vehicle trackers.
-- Autonomous AI agent tool execution for automated dispatcher re-routing.
-- Multi-modal invoice and Bill of Lading (BOL) document OCR scanning.
+### 4. Access URLs & Endpoints
+
+| Resource | URL | Description |
+|---|---|---|
+| **Frontend Application** | [http://localhost:5173](http://localhost:5173) | Main React operations cockpit |
+| **API Swagger Docs** | [http://localhost:8000/docs](http://localhost:8000/docs) | Interactive OpenAPI documentation |
+| **API ReDoc** | [http://localhost:8000/redoc](http://localhost:8000/redoc) | Alternative API documentation |
+| **Health Check** | [http://localhost:8000/health](http://localhost:8000/health) | Backend health status |
 
 ---
 
-## 18. License
-Built for Enterprise Logistics Operations under the MIT License.
+### 5. Pre-Seeded Demo Accounts
+
+The database includes pre-seeded user accounts for testing each role:
+
+| Persona | Email | Password | Role / Access Level |
+|---|---|---|---|
+| **Administrator** | `admin@logiagent.io` | `LogiAgent2026!` | Full system governance & approvals |
+| **Logistics Director** | `manager@logiagent.io` | `LogiAgent2026!` | Operations oversight & fleet dispatch |
+| **Senior Dispatcher** | `dispatcher@logiagent.io` | `LogiAgent2026!` | Live tracking & corridor optimization |
+| **Fleet Manager** | `fleet@logiagent.io` | `LogiAgent2026!` | Vehicle health & driver HOS safety |
+| **Commercial Driver** | `driver@logiagent.io` | `LogiAgent2026!` | Assigned shipment & route portal |
+| **Supply Chain Analyst** | `analyst@logiagent.io` | `LogiAgent2026!` | KPI trends & cost analytics |
+| **Operations Lead** | `ops@logiagent.io` | `LogiAgent2026!` | Terminal operations & updates |
+
+*(The top navigation bar in the frontend allows instant persona switching for testing).*
+
+---
+
+## 🧪 Testing & Verification
+
+LogiAgent includes an automated test suite covering unit tests, RBAC access control, ML models, RAG vector retrieval, and end-to-end AI agent scenarios.
+
+### 1. Run Automated Test Suite (101 Tests)
+```bash
+cd backend
+pytest -v
+```
+
+```text
+================================= test session starts =================================
+collected 101 items
+
+tests/test_agent.py .........................                                  [ 24%]
+tests/test_auth.py .......                                                     [ 31%]
+tests/test_ml.py ..........                                                    [ 41%]
+tests/test_phase10_hardening.py .............                                  [ 54%]
+tests/test_phase11_ai.py .................                                     [ 71%]
+tests/test_phase9_auth_rbac.py .............                                   [ 84%]
+tests/test_rag.py ......                                                       [ 90%]
+tests/test_rbac_telemetry.py .......                                           [ 97%]
+tests/test_settings.py ...                                                     [100%]
+
+================================= 101 passed in 89.31s =================================
+```
+
+### 2. Run End-to-End AI Agent Scenario Verification
+With the backend server running, execute the end-to-end verification script:
+```bash
+cd backend
+python verify_all_scenarios.py
+```
+
+**Verified Scenarios:**
+- `[PASS]` **Scenario 1:** *"Where is shipment SHP-1001?"* → `ShipmentTrackingTool`
+- `[PASS]` **Scenario 2:** *"Show me all delayed shipments."* → `DelayDetectionTool`
+- `[PASS]` **Scenario 3:** *"Which vehicle is available for a 1500 kg shipment?"* → `VehicleAvailabilityTool`
+- `[PASS]` **Scenario 4:** *"Show the driver assigned to SHP-1001."* → `ShipmentTrackingTool`
+- `[PASS]` **Scenario 5:** *"Calculate the estimated delivery time for SHP-1001."* → `ETACalculationTool`
+- `[PASS]` **Scenario 6:** *"What is the failed delivery policy?"* → `RAGPolicyRetriever` (`SOP-LOG-02`)
+- `[PASS]` **Scenario 7:** *"How is our fleet performing?"* → `LogisticsAnalyticsTool` + `CostCalculationTool`
+
+---
+
+## 📄 License
+
+This project is licensed under the MIT License — see the [LICENSE](LICENSE) file for details.
