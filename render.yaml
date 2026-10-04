@@ -1,7 +1,12 @@
+# ==============================================================================
+# LogiAgent — Render Production Infrastructure Blueprint
+# Documentation: https://render.com/docs/infrastructure-as-code
+# ==============================================================================
+
 services:
-  # --------------------------------------------------------------------------
-  # LogiAgent FastAPI Backend Service
-  # --------------------------------------------------------------------------
+  # ----------------------------------------------------------------------------
+  # 1. LogiAgent FastAPI Backend Web Service
+  # ----------------------------------------------------------------------------
   - type: web
     name: logiagent-backend
     runtime: docker
@@ -13,6 +18,10 @@ services:
     envVars:
       - key: ENVIRONMENT
         value: production
+      - key: PROJECT_NAME
+        value: "LogiAgent — AI Logistics Operations Platform"
+      - key: VERSION
+        value: "1.0.0"
       - key: DATABASE_URL
         fromDatabase:
           name: logiagent-postgres
@@ -29,15 +38,23 @@ services:
       - key: ACCESS_TOKEN_EXPIRE_MINUTES
         value: "1440"
       - key: CORS_ALLOWED_ORIGINS
-        value: "*"
+        value: "https://logiagent-frontend.onrender.com,http://localhost:3000,http://localhost:5173"
       - key: LLM_PROVIDER
         value: auto
+      - key: EMBEDDING_MODEL_TYPE
+        value: local
+      - key: EMBEDDING_DIMENSION
+        value: "384"
       - key: RATE_LIMIT_ENABLED
         value: "True"
+      - key: GEMINI_API_KEY
+        sync: false # Set securely in Render dashboard (optional: fallback engine included)
+      - key: OPENAI_API_KEY
+        sync: false # Set securely in Render dashboard (optional)
 
-  # --------------------------------------------------------------------------
-  # LogiAgent React SPA + Nginx Frontend Service
-  # --------------------------------------------------------------------------
+  # ----------------------------------------------------------------------------
+  # 2. LogiAgent React + Vite + Nginx Frontend Web Service
+  # ----------------------------------------------------------------------------
   - type: web
     name: logiagent-frontend
     runtime: docker
@@ -47,24 +64,30 @@ services:
     region: oregon
     healthCheckPath: /healthz
     envVars:
+      - key: BACKEND_URL
+        value: https://logiagent-backend.onrender.com
       - key: VITE_API_BASE_URL
-        value: ""
+        value: https://logiagent-backend.onrender.com
 
+# ------------------------------------------------------------------------------
+# Managed Databases & Key-Value Stores
+# ------------------------------------------------------------------------------
 databases:
-  # --------------------------------------------------------------------------
-  # LogiAgent PostgreSQL 16 + pgvector Database
-  # --------------------------------------------------------------------------
+  # ----------------------------------------------------------------------------
+  # PostgreSQL 16 Database with pgvector Extension
+  # ----------------------------------------------------------------------------
   - name: logiagent-postgres
     databaseName: logiagent_db
     user: logiagent
     plan: starter
     region: oregon
     postgresMajorVersion: "16"
+    ipAllowList: [] # Strict internal access only
 
-  # --------------------------------------------------------------------------
-  # LogiAgent Redis Cache
-  # --------------------------------------------------------------------------
+  # ----------------------------------------------------------------------------
+  # Redis 7 In-Memory Cache
+  # ----------------------------------------------------------------------------
   - name: logiagent-redis
     plan: starter
     region: oregon
-    ipAllowList: [] # internal access only
+    ipAllowList: [] # Strict internal access only

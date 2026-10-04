@@ -24,7 +24,7 @@ export async function apiRequest<T>(
     });
   } catch (netErr: any) {
     throw new Error(
-      `Cannot connect to backend server. Please verify the FastAPI backend is running on http://localhost:8000.`
+      `Cannot connect to backend server at ${BASE_URL}. Please verify the LogiAgent backend service is running and accessible.`
     );
   }
 

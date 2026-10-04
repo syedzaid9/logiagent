@@ -34,6 +34,15 @@ def ensure_schema_compatibility():
     """Ensures database schema backwards compatibility across SQLite and PostgreSQL."""
     try:
         from sqlalchemy import inspect
+        if not settings.DATABASE_URL.startswith("sqlite"):
+            try:
+                with engine.connect() as conn:
+                    conn.execute(text("CREATE EXTENSION IF NOT EXISTS vector;"))
+                    conn.commit()
+                    logger.info("Verified PostgreSQL pgvector extension enabled.")
+            except Exception as ext_err:
+                logger.warning(f"Notice verifying vector extension: {ext_err}")
+
         Base.metadata.create_all(bind=engine)
         inspector = inspect(engine)
         if "users" in inspector.get_table_names():
@@ -84,10 +93,11 @@ app.add_middleware(StructuredLoggingMiddleware)
 app.add_middleware(SecurityHeadersMiddleware)
 app.add_middleware(RequestCorrelationMiddleware)
 
-# 2. CORS Middleware with environment-scoped origins
+# 2. CORS Middleware with environment-scoped origins & Render regex support
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors_origins,
+    allow_origin_regex=r"^https://.*\.onrender\.com$",
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allow_headers=["*"],
