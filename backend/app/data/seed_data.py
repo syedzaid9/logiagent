@@ -35,16 +35,18 @@ def seed_database(force_recreate: bool = True):
 
         # 1. SEED ROLES & PERMISSIONS
         for r_info in STANDARD_ROLES:
-            db.add(Role(name=r_info["name"], description=r_info["description"]))
+            if not db.query(Role).filter(Role.name == r_info["name"]).first():
+                db.add(Role(name=r_info["name"], description=r_info["description"]))
         db.commit()
 
         for p_info in ALL_SYSTEM_PERMISSIONS:
-            db.add(Permission(
-                name=p_info["name"],
-                resource=p_info["resource"],
-                action=p_info["action"],
-                description=p_info["description"]
-            ))
+            if not db.query(Permission).filter(Permission.name == p_info["name"]).first():
+                db.add(Permission(
+                    name=p_info["name"],
+                    resource=p_info["resource"],
+                    action=p_info["action"],
+                    description=p_info["description"]
+                ))
         db.commit()
 
         roles_map = {r.name: r for r in db.query(Role).all()}
@@ -57,7 +59,12 @@ def seed_database(force_recreate: bool = True):
             for perm_name in perm_set:
                 p_obj = perms_map.get(perm_name)
                 if p_obj:
-                    db.add(RolePermission(role_id=r_obj.id, permission_id=p_obj.id))
+                    existing_rp = db.query(RolePermission).filter(
+                        RolePermission.role_id == r_obj.id,
+                        RolePermission.permission_id == p_obj.id
+                    ).first()
+                    if not existing_rp:
+                        db.add(RolePermission(role_id=r_obj.id, permission_id=p_obj.id))
         db.commit()
 
         # 2. SEED APPROVAL POLICIES
@@ -99,37 +106,9 @@ def seed_database(force_recreate: bool = True):
                 description="Administrator accounts require primary admin approval."
             )
         ]
-        db.add_all(policies)
-        db.commit()
-
-        # 3. SEED USERS
-        def_pwd = get_password_hash("LogiAgent2026!")
-        users_data = [
-            User(email="admin@logiagent.io", hashed_password=def_pwd, full_name="Sarah Jenkins (Admin)", role="Admin", role_id=getattr(roles_map.get("Admin"), "id", None), is_active=True, account_status="Active", approval_status="Approved"),
-            User(email="manager@logiagent.io", hashed_password=def_pwd, full_name="David Vance (Logistics Director)", role="Logistics Manager", role_id=getattr(roles_map.get("Logistics Manager"), "id", None), is_active=True, account_status="Active", approval_status="Approved"),
-            User(email="dispatcher@logiagent.io", hashed_password=def_pwd, full_name="Marcus Reed (Senior Dispatcher)", role="Dispatcher", role_id=getattr(roles_map.get("Dispatcher"), "id", None), is_active=True, account_status="Active", approval_status="Approved"),
-            User(email="fleet@logiagent.io", hashed_password=def_pwd, full_name="Carlson Vance (Fleet Manager)", role="Fleet Manager", role_id=getattr(roles_map.get("Fleet Manager"), "id", None), is_active=True, account_status="Active", approval_status="Approved"),
-            User(email="driver@logiagent.io", hashed_password=def_pwd, full_name="Robert McCall (Commercial Driver)", role="Driver", role_id=getattr(roles_map.get("Driver"), "id", None), driver_id=1, is_active=True, account_status="Active", approval_status="Approved"),
-            User(email="analyst@logiagent.io", hashed_password=def_pwd, full_name="Dr. Aris Thorne (Supply Chain Analyst)", role="Analyst", role_id=getattr(roles_map.get("Analyst"), "id", None), is_active=True, account_status="Active", approval_status="Approved"),
-            User(email="ops@logiagent.io", hashed_password=def_pwd, full_name="Elena Rostova (Operations Lead)", role="Operations Team", role_id=getattr(roles_map.get("Operations Team"), "id", None), is_active=True, account_status="Active", approval_status="Approved"),
-        ]
-        db.add_all(users_data)
-        db.commit()
-
-        # 2. SEED CUSTOMERS
-        customers_data = [
-            Customer(customer_code="CUST-101", name="Apex Global Retail", company_name="Apex Retail Corp", email="logistics@apexretail.com", phone="+1-555-0190", tier="Enterprise"),
-            Customer(customer_code="CUST-102", name="BioPharma Health Logistics", company_name="BioPharma Global", email="supplychain@biopharma.org", phone="+1-555-0191", tier="Enterprise"),
-            Customer(customer_code="CUST-103", name="NovaTech Components", company_name="NovaTech Electronics", email="shipping@novatech.com", phone="+1-555-0192", tier="Enterprise"),
-            Customer(customer_code="CUST-104", name="FreshHarvest Organics", company_name="FreshHarvest Farms", email="orders@freshharvest.com", phone="+1-555-0193", tier="Premium"),
-            Customer(customer_code="CUST-105", name="Titan Industrial Machinery", company_name="Titan Heavy Industries", email="freight@titanmachinery.com", phone="+1-555-0194", tier="Premium"),
-            Customer(customer_code="CUST-106", name="Vanguard Automotive", company_name="Vanguard Motors", email="parts@vanguardauto.com", phone="+1-555-0195", tier="Enterprise"),
-            Customer(customer_code="CUST-107", name="Summit Consumer Goods", company_name="Summit Brands LLC", email="supply@summitgoods.com", phone="+1-555-0196", tier="Standard"),
-            Customer(customer_code="CUST-108", name="Cascade Beverage Co.", company_name="Cascade Beverages", email="distrib@cascadebev.com", phone="+1-555-0197", tier="Standard"),
-            Customer(customer_code="CUST-109", name="Solaris Chem Solutions", company_name="Solaris Chemical Labs", email="hazmat@solarischem.com", phone="+1-555-0198", tier="Premium"),
-            Customer(customer_code="CUST-110", name="Horizon Home Goods", company_name="Horizon Logistics Direct", email="dispatch@horizonhome.com", phone="+1-555-0199", tier="Standard"),
-        ]
-        db.add_all(customers_data)
+        for pol in policies:
+            if not db.query(ApprovalPolicy).filter(ApprovalPolicy.role_name == pol.role_name).first():
+                db.add(pol)
         db.commit()
 
         # 3. SEED DELIVERY LOCATIONS (Hubs & Centers)
@@ -150,10 +129,30 @@ def seed_database(force_recreate: bool = True):
             DeliveryLocation(location_code="SITE-SFO", name="Silicon Valley Semiconductor Dock", address="3000 Hanover St", city="Palo Alto", state="CA", postal_code="94304", latitude=37.4275, longitude=-122.1432, hub_type="Customer Site"),
             DeliveryLocation(location_code="SITE-BNA", name="Nashville Retail Distribution Store #402", address="700 Opry Mills Dr", city="Nashville", state="TN", postal_code="37214", latitude=36.1498, longitude=-86.6924, hub_type="Store"),
         ]
-        db.add_all(locations_data)
+        for loc in locations_data:
+            if not db.query(DeliveryLocation).filter(DeliveryLocation.location_code == loc.location_code).first():
+                db.add(loc)
         db.commit()
 
-        # 4. SEED DRIVERS
+        # 4. SEED CUSTOMERS
+        customers_data = [
+            Customer(customer_code="CUST-101", name="Apex Global Retail", company_name="Apex Retail Corp", email="logistics@apexretail.com", phone="+1-555-0190", tier="Enterprise"),
+            Customer(customer_code="CUST-102", name="BioPharma Health Logistics", company_name="BioPharma Global", email="supplychain@biopharma.org", phone="+1-555-0191", tier="Enterprise"),
+            Customer(customer_code="CUST-103", name="NovaTech Components", company_name="NovaTech Electronics", email="shipping@novatech.com", phone="+1-555-0192", tier="Enterprise"),
+            Customer(customer_code="CUST-104", name="FreshHarvest Organics", company_name="FreshHarvest Farms", email="orders@freshharvest.com", phone="+1-555-0193", tier="Premium"),
+            Customer(customer_code="CUST-105", name="Titan Industrial Machinery", company_name="Titan Heavy Industries", email="freight@titanmachinery.com", phone="+1-555-0194", tier="Premium"),
+            Customer(customer_code="CUST-106", name="Vanguard Automotive", company_name="Vanguard Motors", email="parts@vanguardauto.com", phone="+1-555-0195", tier="Enterprise"),
+            Customer(customer_code="CUST-107", name="Summit Consumer Goods", company_name="Summit Brands LLC", email="supply@summitgoods.com", phone="+1-555-0196", tier="Standard"),
+            Customer(customer_code="CUST-108", name="Cascade Beverage Co.", company_name="Cascade Beverages", email="distrib@cascadebev.com", phone="+1-555-0197", tier="Standard"),
+            Customer(customer_code="CUST-109", name="Solaris Chem Solutions", company_name="Solaris Chemical Labs", email="hazmat@solarischem.com", phone="+1-555-0198", tier="Premium"),
+            Customer(customer_code="CUST-110", name="Horizon Home Goods", company_name="Horizon Logistics Direct", email="dispatch@horizonhome.com", phone="+1-555-0199", tier="Standard"),
+        ]
+        for c in customers_data:
+            if not db.query(Customer).filter(Customer.customer_code == c.customer_code).first():
+                db.add(c)
+        db.commit()
+
+        # 5. SEED DRIVERS
         drivers_data = [
             Driver(driver_code="DRV-01", name="Robert McCall", email="robert.mccall@logiagent.com", phone="+1-555-0201", license_number="DL-IL-98412", license_type="CDL-A", status="On Duty", rating=4.9, hours_of_service_remaining=6.5, current_latitude=41.9742, current_longitude=-87.9073),
             Driver(driver_code="DRV-02", name="Carlos Mendez", email="carlos.mendez@logiagent.com", phone="+1-555-0202", license_number="DL-TX-44120", license_type="CDL-A", status="Available", rating=4.8, hours_of_service_remaining=10.5, current_latitude=32.8998, current_longitude=-97.0403),
@@ -168,10 +167,12 @@ def seed_database(force_recreate: bool = True):
             Driver(driver_code="DRV-11", name="Ethan Miller", email="ethan.m@logiagent.com", phone="+1-555-0211", license_number="DL-AZ-22941", license_type="CDL-B", status="Rest", rating=4.8, hours_of_service_remaining=0.5, current_latitude=33.4352, current_longitude=-112.0101),
             Driver(driver_code="DRV-12", name="Liam Chen", email="liam.chen@logiagent.com", phone="+1-555-0212", license_number="DL-IL-55310", license_type="CDL-A", status="Available", rating=4.9, hours_of_service_remaining=11.0, current_latitude=41.9742, current_longitude=-87.9073),
         ]
-        db.add_all(drivers_data)
+        for d in drivers_data:
+            if not db.query(Driver).filter(Driver.driver_code == d.driver_code).first():
+                db.add(d)
         db.commit()
 
-        # 5. SEED VEHICLES
+        # 6. SEED VEHICLES
         vehicles_data = [
             Vehicle(vehicle_code="TRK-101", model="Freightliner Cascadia 126", type="Semi-Truck (Dry Van)", max_capacity_kg=20000.0, current_load_kg=14500.0, status="In Transit", current_location="I-80 Corridor Mile 142", latitude=41.5868, longitude=-87.3456, fuel_level_pct=78.0, fuel_type="Diesel", driver_id=1),
             Vehicle(vehicle_code="TRK-102", model="Volvo VNL 860 Reefer", type="Reefer (Refrigerated)", max_capacity_kg=18000.0, current_load_kg=0.0, status="Available", current_location="Dallas Freight Depot", latitude=32.8998, longitude=-97.0403, fuel_level_pct=95.0, fuel_type="Diesel", driver_id=2),
@@ -186,7 +187,9 @@ def seed_database(force_recreate: bool = True):
             Vehicle(vehicle_code="TRK-111", model="Ford E-Transit Cargo", type="Sprinter Van", max_capacity_kg=2200.0, current_load_kg=0.0, status="Maintenance", current_location="Phoenix Service Center", latitude=33.4352, longitude=-112.0101, fuel_level_pct=40.0, fuel_type="Electric", driver_id=None),
             Vehicle(vehicle_code="TRK-112", model="Freightliner eCascadia", type="Semi-Truck (Dry Van)", max_capacity_kg=19000.0, current_load_kg=0.0, status="Available", current_location="Chicago Central Superhub", latitude=41.9742, longitude=-87.9073, fuel_level_pct=100.0, fuel_type="Electric", driver_id=12),
         ]
-        db.add_all(vehicles_data)
+        for v in vehicles_data:
+            if not db.query(Vehicle).filter(Vehicle.vehicle_code == v.vehicle_code).first():
+                db.add(v)
         db.commit()
 
         # Update driver vehicle mappings
@@ -196,7 +199,36 @@ def seed_database(force_recreate: bool = True):
                 d.current_vehicle_id = v.id
         db.commit()
 
-        # 6. SEED ORDERS
+        # 7. SEED USERS (with proper driver_id linking)
+        def_pwd = get_password_hash("LogiAgent2026!")
+        drv1 = db.query(Driver).filter(Driver.driver_code == "DRV-01").first()
+        drv2 = db.query(Driver).filter(Driver.driver_code == "DRV-02").first()
+        drv3 = db.query(Driver).filter(Driver.driver_code == "DRV-03").first()
+
+        users_data = [
+            User(email="admin@logiagent.io", hashed_password=def_pwd, full_name="Sarah Jenkins (Admin)", role="Admin", role_id=getattr(roles_map.get("Admin"), "id", None), is_active=True, account_status="Active", approval_status="Approved"),
+            User(email="manager@logiagent.io", hashed_password=def_pwd, full_name="David Vance (Logistics Director)", role="Logistics Manager", role_id=getattr(roles_map.get("Logistics Manager"), "id", None), is_active=True, account_status="Active", approval_status="Approved"),
+            User(email="dispatcher@logiagent.io", hashed_password=def_pwd, full_name="Marcus Reed (Senior Dispatcher)", role="Dispatcher", role_id=getattr(roles_map.get("Dispatcher"), "id", None), is_active=True, account_status="Active", approval_status="Approved"),
+            User(email="fleet@logiagent.io", hashed_password=def_pwd, full_name="Carlson Vance (Fleet Manager)", role="Fleet Manager", role_id=getattr(roles_map.get("Fleet Manager"), "id", None), is_active=True, account_status="Active", approval_status="Approved"),
+            User(email="driver@logiagent.io", hashed_password=def_pwd, full_name="Robert McCall (Commercial Driver)", role="Driver", role_id=getattr(roles_map.get("Driver"), "id", None), driver_id=drv1.id if drv1 else None, is_active=True, account_status="Active", approval_status="Approved"),
+            User(email="rajesh@logiagent.io", hashed_password=None, full_name="Rajesh Kumar (Commercial Driver)", role="Driver", role_id=getattr(roles_map.get("Driver"), "id", None), driver_id=drv2.id if drv2 else None, is_active=True, account_status="Active", approval_status="Approved"),
+            User(email="raj@logiagent.io", hashed_password=def_pwd, full_name="Rajesh Operational (Driver)", role="Driver", role_id=getattr(roles_map.get("Driver"), "id", None), driver_id=drv3.id if drv3 else None, is_active=True, account_status="Active", approval_status="Approved"),
+            User(email="analyst@logiagent.io", hashed_password=def_pwd, full_name="Dr. Aris Thorne (Supply Chain Analyst)", role="Analyst", role_id=getattr(roles_map.get("Analyst"), "id", None), is_active=True, account_status="Active", approval_status="Approved"),
+            User(email="ops@logiagent.io", hashed_password=def_pwd, full_name="Elena Rostova (Operations Lead)", role="Operations Team", role_id=getattr(roles_map.get("Operations Team"), "id", None), is_active=True, account_status="Active", approval_status="Approved"),
+        ]
+        for u in users_data:
+            if not db.query(User).filter(User.email == u.email).first():
+                db.add(u)
+        db.commit()
+
+        # Update driver vehicle mappings
+        for d in db.query(Driver).all():
+            v = db.query(Vehicle).filter(Vehicle.driver_id == d.id).first()
+            if v:
+                d.current_vehicle_id = v.id
+        db.commit()
+
+        # 8. SEED ORDERS
         now = datetime.utcnow()
         orders_data = []
         for i in range(1, 37):
@@ -209,7 +241,9 @@ def seed_database(force_recreate: bool = True):
                 item_count=max(1, (i * 3) % 45),
                 status="Shipped" if i <= 20 else "Confirmed" if i <= 30 else "Delivered"
             ))
-        db.add_all(orders_data)
+        for o in orders_data:
+            if not db.query(Order).filter(Order.order_code == o.order_code).first():
+                db.add(o)
         db.commit()
 
         # 7. SEED SHIPMENTS (36 Shipments with comprehensive statuses)
@@ -442,78 +476,87 @@ def seed_database(force_recreate: bool = True):
             )
             shipments_data.append(shipment)
 
-        db.add_all(shipments_data)
+        for s in shipments_data:
+            if not db.query(Shipment).filter(Shipment.shipment_code == s.shipment_code).first():
+                db.add(s)
         db.commit()
 
-        # 7. SEED ROUTES & TRANSPORTATION COSTS & STATUS HISTORIES
+        # 9. SEED ROUTES & TRANSPORTATION COSTS & STATUS HISTORIES
         for s in db.query(Shipment).all():
             orig = db.query(DeliveryLocation).filter(DeliveryLocation.id == s.origin_id).first()
             dest = db.query(DeliveryLocation).filter(DeliveryLocation.id == s.destination_id).first()
             
+            if not orig or not dest:
+                continue
+
             # Approximate distance
             dist = round(abs(orig.latitude - dest.latitude) * 111.0 + abs(orig.longitude - dest.longitude) * 85.0 + 80.0, 1)
             dur = int((dist / 68.0) * 60)
             traffic = "Heavy" if s.delay_minutes > 40 else "Moderate" if s.delay_minutes > 0 else "Light"
 
-            route = Route(
-                route_code=f"RTE-{s.shipment_code.replace('SHP-', '')}",
-                shipment_id=s.id,
-                origin_id=s.origin_id,
-                destination_id=s.destination_id,
-                planned_distance_km=dist,
-                actual_distance_km=round(dist * 1.04, 1) if s.status in ["In Transit", "Delivered", "Delayed"] else dist,
-                planned_duration_min=dur,
-                actual_duration_min=dur + s.delay_minutes,
-                traffic_condition=traffic,
-                weather_condition="Rain" if s.delay_risk_score > 70 else "Clear",
-                estimated_cost=round(dist * 2.15, 2)
-            )
-            db.add(route)
+            route_code = f"RTE-{s.shipment_code.replace('SHP-', '')}"
+            if not db.query(Route).filter(Route.route_code == route_code).first():
+                route = Route(
+                    route_code=route_code,
+                    shipment_id=s.id,
+                    origin_id=s.origin_id,
+                    destination_id=s.destination_id,
+                    planned_distance_km=dist,
+                    actual_distance_km=round(dist * 1.04, 1) if s.status in ["In Transit", "Delivered", "Delayed"] else dist,
+                    planned_duration_min=dur,
+                    actual_duration_min=dur + s.delay_minutes,
+                    traffic_condition=traffic,
+                    weather_condition="Rain" if s.delay_risk_score > 70 else "Clear",
+                    estimated_cost=round(dist * 2.15, 2)
+                )
+                db.add(route)
 
             # Cost record
-            fuel = round((dist / 100.0) * 32.0 * 1.15, 2)
-            wage = round((dur / 60.0) * 32.0, 2)
-            toll = 35.0 if dist > 300 else 15.0
-            maint = round(dist * 0.14, 2)
-            tot = round(fuel + wage + toll + maint, 2)
+            if not db.query(TransportationCost).filter(TransportationCost.shipment_id == s.id).first():
+                fuel = round((dist / 100.0) * 32.0 * 1.15, 2)
+                wage = round((dur / 60.0) * 32.0, 2)
+                toll = 35.0 if dist > 300 else 15.0
+                maint = round(dist * 0.14, 2)
+                tot = round(fuel + wage + toll + maint, 2)
 
-            cost = TransportationCost(
-                shipment_id=s.id,
-                vehicle_id=s.vehicle_id,
-                distance_km=dist,
-                fuel_cost=fuel,
-                driver_wage_cost=wage,
-                toll_cost=toll,
-                maintenance_cost=maint,
-                total_cost=tot,
-                cost_per_km=round(tot / dist, 2) if dist > 0 else 2.15
-            )
-            db.add(cost)
+                cost = TransportationCost(
+                    shipment_id=s.id,
+                    vehicle_id=s.vehicle_id,
+                    distance_km=dist,
+                    fuel_cost=fuel,
+                    driver_wage_cost=wage,
+                    toll_cost=toll,
+                    maintenance_cost=maint,
+                    total_cost=tot,
+                    cost_per_km=round(tot / dist, 2) if dist > 0 else 2.15
+                )
+                db.add(cost)
 
             # History record
-            hist1 = ShipmentStatusHistory(
-                shipment_id=s.id,
-                status="Created",
-                location_name=orig.name,
-                latitude=orig.latitude,
-                longitude=orig.longitude,
-                notes="Bill of Lading generated and shipment registered in LogiAgent.",
-                timestamp=now - timedelta(hours=36)
-            )
-            hist2 = ShipmentStatusHistory(
-                shipment_id=s.id,
-                status=s.status,
-                location_name=s.current_location_name or dest.name,
-                latitude=s.current_latitude or dest.latitude,
-                longitude=s.current_longitude or dest.longitude,
-                notes=f"Telemetry checkpoint recorded. Status: {s.status}.",
-                timestamp=now - timedelta(hours=2)
-            )
-            db.add_all([hist1, hist2])
+            if not db.query(ShipmentStatusHistory).filter(ShipmentStatusHistory.shipment_id == s.id).first():
+                hist1 = ShipmentStatusHistory(
+                    shipment_id=s.id,
+                    status="Created",
+                    location_name=orig.name,
+                    latitude=orig.latitude,
+                    longitude=orig.longitude,
+                    notes="Bill of Lading generated and shipment registered in LogiAgent.",
+                    timestamp=now - timedelta(hours=36)
+                )
+                hist2 = ShipmentStatusHistory(
+                    shipment_id=s.id,
+                    status=s.status,
+                    location_name=s.current_location_name or dest.name,
+                    latitude=s.current_latitude or dest.latitude,
+                    longitude=s.current_longitude or dest.longitude,
+                    notes=f"Telemetry checkpoint recorded. Status: {s.status}.",
+                    timestamp=now - timedelta(hours=2)
+                )
+                db.add_all([hist1, hist2])
 
         db.commit()
 
-        # 8. SEED NOTIFICATIONS
+        # 10. SEED NOTIFICATIONS
         notifs_data = [
             Notification(title="Severe Delay Alert: SHP-1002 (Cold Chain)", message="BioPharma shipment delayed 4.5h due to coastal storm. Reefer telemetry active at +4.0°C.", notification_type="delay", severity="critical", channel="Push", recipient="ops-team@logiagent.io", status="unread", shipment_id=2),
             Notification(title="Traffic Bottleneck: SHP-1001 (Chicago Corridor)", message="SHP-1001 experiencing 75 min delay on I-80 corridor. ETA updated to 15h 15m.", notification_type="eta_change", severity="high", channel="Email", recipient="manager@logiagent.io", status="unread", shipment_id=1),
@@ -521,8 +564,9 @@ def seed_database(force_recreate: bool = True):
             Notification(title="Route Clearance: TRK-104", message="I-10 westbound cleared. Resuming normal highway cruise speed.", notification_type="critical_event", severity="low", channel="In-App", recipient="dispatcher@logiagent.io", status="read", shipment_id=4),
             Notification(title="HOS Advisory: Driver Robert McCall", message="Driver has 6.5 hours remaining in driving duty window.", notification_type="critical_event", severity="medium", channel="In-App", recipient="dispatcher@logiagent.io", status="read", shipment_id=1),
         ]
-        db.add_all(notifs_data)
-        db.commit()
+        if db.query(Notification).count() == 0:
+            db.add_all(notifs_data)
+            db.commit()
 
         # 9. INITIALIZE RAG VECTOR STORE WITH ALL SOPS
         indexed_chunks_count = initialize_rag()

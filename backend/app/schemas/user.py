@@ -16,7 +16,25 @@ class UserProvisionResponse(BaseModel):
     message: str
     user: UserResponse
     activation_token: Optional[str] = None
+    activation_expires_at: Optional[datetime] = None
+    development_invitation_url: Optional[str] = None
     requires_approval: bool = False
+
+class UserReissueInvitationResponse(BaseModel):
+    success: bool
+    message: str
+    activation_token: str
+    activation_expires_at: Optional[datetime] = None
+    development_invitation_url: Optional[str] = None
+    user: UserResponse
+
+class UserLinkDriverRequest(BaseModel):
+    driver_id: Optional[int] = None
+    auto_create: bool = False
+    driver_code: Optional[str] = None
+    phone: Optional[str] = None
+    license_number: Optional[str] = None
+    license_type: Optional[str] = "CDL-A"
 
 class UserUpdateRequest(BaseModel):
     full_name: Optional[str] = Field(None, max_length=255)

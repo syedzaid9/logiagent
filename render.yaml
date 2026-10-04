@@ -1,0 +1,70 @@
+services:
+  # --------------------------------------------------------------------------
+  # LogiAgent FastAPI Backend Service
+  # --------------------------------------------------------------------------
+  - type: web
+    name: logiagent-backend
+    runtime: docker
+    dockerContext: ./backend
+    dockerfilePath: ./backend/Dockerfile
+    plan: starter
+    region: oregon
+    healthCheckPath: /health
+    envVars:
+      - key: ENVIRONMENT
+        value: production
+      - key: DATABASE_URL
+        fromDatabase:
+          name: logiagent-postgres
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: logiagent-redis
+          property: connectionString
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_ALGORITHM
+        value: HS256
+      - key: ACCESS_TOKEN_EXPIRE_MINUTES
+        value: "1440"
+      - key: CORS_ALLOWED_ORIGINS
+        value: "*"
+      - key: LLM_PROVIDER
+        value: auto
+      - key: RATE_LIMIT_ENABLED
+        value: "True"
+
+  # --------------------------------------------------------------------------
+  # LogiAgent React SPA + Nginx Frontend Service
+  # --------------------------------------------------------------------------
+  - type: web
+    name: logiagent-frontend
+    runtime: docker
+    dockerContext: ./frontend
+    dockerfilePath: ./frontend/Dockerfile
+    plan: starter
+    region: oregon
+    healthCheckPath: /healthz
+    envVars:
+      - key: VITE_API_BASE_URL
+        value: ""
+
+databases:
+  # --------------------------------------------------------------------------
+  # LogiAgent PostgreSQL 16 + pgvector Database
+  # --------------------------------------------------------------------------
+  - name: logiagent-postgres
+    databaseName: logiagent_db
+    user: logiagent
+    plan: starter
+    region: oregon
+    postgresMajorVersion: "16"
+
+  # --------------------------------------------------------------------------
+  # LogiAgent Redis Cache
+  # --------------------------------------------------------------------------
+  - name: logiagent-redis
+    plan: starter
+    region: oregon
+    ipAllowList: [] # internal access only

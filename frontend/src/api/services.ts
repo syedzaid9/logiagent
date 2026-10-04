@@ -52,6 +52,42 @@ export const api = {
       body: JSON.stringify(data),
     });
   },
+  forgotPassword: async (email: string) => {
+    return apiRequest<{
+      success: boolean;
+      message: string;
+      reset_token?: string;
+      reset_url?: string;
+    }>('/auth/forgot-password', {
+      method: 'POST',
+      body: JSON.stringify({ email }),
+    });
+  },
+  getResetPasswordInfo: async (token: string) => {
+    return apiRequest<{
+      valid: boolean;
+      email?: string;
+      message?: string;
+    }>(`/auth/reset-password/${encodeURIComponent(token)}`);
+  },
+  resetPassword: async (data: { token: string; password: string }) => {
+    return apiRequest<{
+      success: boolean;
+      message: string;
+    }>('/auth/reset-password', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+  changePassword: async (data: { current_password: string; new_password: string }) => {
+    return apiRequest<{
+      success: boolean;
+      message: string;
+    }>('/auth/change-password', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
 
   // User & Account Management (RBAC & Approvals)
   getUsers: async (params?: { role?: string; status?: string; search?: string }) => {
@@ -61,8 +97,50 @@ export const api = {
     if (params?.search) query.append('search', params.search);
     return apiRequest<User[]>(`/users?${query.toString()}`);
   },
-  provisionUser: async (data: { email: string; full_name: string; role: string; driver_id?: number; require_approval?: boolean }) => {
-    return apiRequest<{ message: string; user: User; activation_token?: string; invitation_url?: string }>('/users/provision', {
+  provisionUser: async (data: {
+    email: string;
+    full_name: string;
+    role: string;
+    driver_id?: number;
+    require_approval?: boolean;
+  }) => {
+    return apiRequest<{
+      success: boolean;
+      message: string;
+      user: User;
+      activation_token?: string;
+      activation_expires_at?: string;
+      development_invitation_url?: string;
+      requires_approval: boolean;
+    }>('/users/provision', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+  reissueInvitation: async (id: number) => {
+    return apiRequest<{
+      success: boolean;
+      message: string;
+      activation_token: string;
+      activation_expires_at?: string;
+      development_invitation_url?: string;
+      user: User;
+    }>(`/users/${id}/reissue-invitation`, {
+      method: 'POST',
+    });
+  },
+  linkDriverProfile: async (
+    id: number,
+    data: {
+      driver_id?: number;
+      auto_create?: boolean;
+      driver_code?: string;
+      phone?: string;
+      license_number?: string;
+      license_type?: string;
+    }
+  ) => {
+    return apiRequest<User>(`/users/${id}/link-driver`, {
       method: 'POST',
       body: JSON.stringify(data),
     });

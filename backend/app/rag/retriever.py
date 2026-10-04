@@ -68,7 +68,7 @@ def retrieve_relevant_policies(
     user_role: Optional[str] = None,
     top_k: int = 4,
     category: Optional[str] = None,
-    min_similarity: float = 0.20
+    min_similarity: float = 0.05
 ) -> List[Dict[str, Any]]:
     """
     Retrieve grounded policy and SOP chunks for a user query using Supabase pgvector similarity search,

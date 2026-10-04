@@ -30,11 +30,28 @@ from app.api.v1 import api_v1_router
 
 setup_logging()
 
+def ensure_schema_compatibility():
+    """Ensures database schema backwards compatibility across SQLite and PostgreSQL."""
+    try:
+        from sqlalchemy import inspect
+        Base.metadata.create_all(bind=engine)
+        inspector = inspect(engine)
+        if "users" in inspector.get_table_names():
+            cols = [c["name"] for c in inspector.get_columns("users")]
+            with engine.begin() as conn:
+                if "reset_password_token" not in cols:
+                    conn.execute(text("ALTER TABLE users ADD COLUMN reset_password_token VARCHAR(255);"))
+                if "reset_password_expires_at" not in cols:
+                    conn.execute(text("ALTER TABLE users ADD COLUMN reset_password_expires_at TIMESTAMP;"))
+    except Exception as e:
+        logger.warning(f"Schema check notice: {e}")
+
+ensure_schema_compatibility()
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     logger.info("Starting up LogiAgent Backend Server (Production Hardened)...")
-    # Initialize DB tables
-    Base.metadata.create_all(bind=engine)
+    ensure_schema_compatibility()
     
     # Check if DB has data, otherwise seed
     db = SessionLocal()

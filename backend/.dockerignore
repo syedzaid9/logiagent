@@ -11,4 +11,3 @@ venv/
 *.log
 .coverage
 htmlcov/
-tests/

@@ -7,7 +7,7 @@ class User(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     email = Column(String(255), unique=True, index=True, nullable=False)
-    hashed_password = Column(String(255), nullable=False)
+    hashed_password = Column(String(255), nullable=True)
     full_name = Column(String(255), nullable=False)
     role = Column(String(50), nullable=False, default="Driver", index=True)  # Admin, Logistics Manager, Dispatcher, Fleet Manager, Driver, Analyst
     role_id = Column(Integer, ForeignKey("roles.id"), nullable=True, index=True)
@@ -26,6 +26,8 @@ class User(Base):
     approved_at = Column(DateTime, nullable=True)
     activation_token = Column(String(255), nullable=True, index=True)
     activation_expires_at = Column(DateTime, nullable=True)
+    reset_password_token = Column(String(255), nullable=True, index=True)
+    reset_password_expires_at = Column(DateTime, nullable=True)
     auth_user_id = Column(String(255), nullable=True, index=True)  # External Supabase Auth UUID
     
     created_at = Column(DateTime, default=datetime.utcnow, index=True)

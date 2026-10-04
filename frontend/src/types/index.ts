@@ -10,8 +10,11 @@ export interface User {
   is_active: boolean;
   account_status?: AccountStatus;
   approval_status?: ApprovalStatus;
+  has_usable_password?: boolean;
+  has_activation_token?: boolean;
   driver_id?: number;
   driver_code?: string;
+  driver_name?: string;
   driver_phone?: string;
   assigned_vehicle_id?: number;
   assigned_vehicle_code?: string;
@@ -52,6 +55,20 @@ export interface UserProvisionPayload {
   role: UserRole;
   driver_id?: number;
   require_approval?: boolean;
+}
+
+export interface ForgotPasswordPayload {
+  email: string;
+}
+
+export interface ResetPasswordPayload {
+  token: string;
+  password: string;
+}
+
+export interface ChangePasswordPayload {
+  current_password: string;
+  new_password: string;
 }
 
 export interface UserApprovalAction {

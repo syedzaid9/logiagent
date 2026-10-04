@@ -1,7 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
-import { LogIn, Truck, ShieldCheck, AlertTriangle, KeyRound, Sparkles, UserPlus, Eye, EyeOff, CheckCircle2 } from 'lucide-react';
+import { LogIn, Truck, ShieldCheck, AlertTriangle, KeyRound, Sparkles, UserPlus, Eye, EyeOff, CheckCircle2, HelpCircle } from 'lucide-react';
 import { ActivateAccountModal } from './ActivateAccountModal';
+import { ForgotPasswordModal } from './ForgotPasswordModal';
+import { ResetPasswordModal } from './ResetPasswordModal';
 
 const DEMO_ROLES = [
   { role: 'Admin', email: 'admin@logiagent.io', label: 'Admin', desc: 'Governance & All Access', color: 'blue' },
@@ -27,7 +29,33 @@ export const LoginView: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+
+  // Modals
   const [showActivateModal, setShowActivateModal] = useState(false);
+  const [activateToken, setActivateToken] = useState('');
+  const [showForgotModal, setShowForgotModal] = useState(false);
+  const [showResetModal, setShowResetModal] = useState(false);
+  const [resetToken, setResetToken] = useState('');
+
+  // Detect query params or pathname for direct activation or reset link opening
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const tokenParam = params.get('token');
+    const resetParam = params.get('reset_token') || params.get('resetToken');
+    const pathname = window.location.pathname;
+
+    if (pathname.includes('/activate-account') || pathname.includes('/accept-invitation') || (tokenParam && !pathname.includes('/reset-password'))) {
+      if (tokenParam) {
+        setActivateToken(tokenParam);
+      }
+      setShowActivateModal(true);
+    } else if (pathname.includes('/reset-password') || resetParam) {
+      if (tokenParam || resetParam) {
+        setResetToken(tokenParam || resetParam || '');
+      }
+      setShowResetModal(true);
+    }
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -153,7 +181,7 @@ export const LoginView: React.FC = () => {
                   required
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
-                  placeholder="e.g. Sarah Jenkins"
+                  placeholder="e.g. Rajesh Kumar"
                   className="w-full rounded-lg bg-white border border-slate-300 px-3.5 py-2 text-xs text-slate-850 placeholder-slate-400 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all"
                 />
               </div>
@@ -168,7 +196,7 @@ export const LoginView: React.FC = () => {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="admin@logiagent.io or admin"
+                placeholder="admin@logiagent.io or rajesh@logiagent.io"
                 className="w-full rounded-lg bg-white border border-slate-300 px-3.5 py-2 text-xs text-slate-850 placeholder-slate-400 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all"
               />
             </div>
@@ -199,9 +227,15 @@ export const LoginView: React.FC = () => {
                 <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider">
                   Password
                 </label>
-                <span className="text-[10px] text-slate-400">
-                  {authMode === 'login' ? 'Demo: LogiAgent2026! or admin123' : 'Min 3 chars'}
-                </span>
+                {authMode === 'login' && (
+                  <button
+                    type="button"
+                    onClick={() => setShowForgotModal(true)}
+                    className="text-[11px] text-blue-600 hover:text-blue-800 font-semibold transition-colors cursor-pointer"
+                  >
+                    Forgot Password?
+                  </button>
+                )}
               </div>
               <div className="relative">
                 <input
@@ -247,11 +281,14 @@ export const LoginView: React.FC = () => {
           <div className="mt-4 pt-3 border-t border-slate-200 text-center">
             <button
               type="button"
-              onClick={() => setShowActivateModal(true)}
+              onClick={() => {
+                setActivateToken('');
+                setShowActivateModal(true);
+              }}
               className="text-[11px] text-blue-600 hover:text-blue-700 font-medium inline-flex items-center gap-1.5 transition-colors cursor-pointer"
             >
               <KeyRound className="h-3.5 w-3.5" />
-              <span>Received an account invitation? Activate with token</span>
+              <span>Received an account invitation? Activate Account</span>
             </button>
           </div>
 
@@ -264,7 +301,7 @@ export const LoginView: React.FC = () => {
               </div>
               <span className="text-[10px] text-emerald-600 font-medium flex items-center gap-0.5">
                 <CheckCircle2 className="h-2.5 w-2.5" />
-                Auto-fills & logs in
+                Auto-fills
               </span>
             </div>
             <div className="grid grid-cols-2 gap-1.5">
@@ -273,7 +310,7 @@ export const LoginView: React.FC = () => {
                   key={r.email}
                   type="button"
                   disabled={isLoading}
-                  onClick={() => handleQuickFill(r.email, true)}
+                  onClick={() => handleQuickFill(r.email, false)}
                   className="text-left p-2 rounded-lg bg-slate-50 hover:bg-blue-50/70 border border-slate-200 hover:border-blue-300 text-[11px] transition-all cursor-pointer group flex flex-col justify-between"
                 >
                   <div className="font-semibold text-slate-800 group-hover:text-blue-700 flex items-center justify-between">
@@ -289,12 +326,37 @@ export const LoginView: React.FC = () => {
 
         <div className="mt-4 flex items-center justify-center gap-1.5 text-[11px] text-slate-500">
           <ShieldCheck className="h-3.5 w-3.5 text-emerald-600" />
-          <span>FastAPI + SQLite/PostgreSQL Bearer JWT Authentication</span>
+          <span>FastAPI + PostgreSQL Secure Token Authentication</span>
         </div>
       </div>
 
       {showActivateModal && (
-        <ActivateAccountModal onClose={() => setShowActivateModal(false)} />
+        <ActivateAccountModal
+          initialToken={activateToken}
+          onClose={() => setShowActivateModal(false)}
+        />
+      )}
+
+      {showForgotModal && (
+        <ForgotPasswordModal
+          onClose={() => setShowForgotModal(false)}
+          onOpenResetWithToken={(t) => {
+            setShowForgotModal(false);
+            setResetToken(t);
+            setShowResetModal(true);
+          }}
+        />
+      )}
+
+      {showResetModal && (
+        <ResetPasswordModal
+          initialToken={resetToken}
+          onClose={() => setShowResetModal(false)}
+          onSuccess={() => {
+            setShowResetModal(false);
+            setSuccessMsg('Password reset completed! Please sign in with your new password.');
+          }}
+        />
       )}
     </div>
   );

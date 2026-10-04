@@ -4,7 +4,7 @@ from typing import Dict, Any, List, Optional
 from datetime import datetime
 from fastapi import APIRouter, Depends, HTTPException, status, Query, Response
 from sqlalchemy.orm import Session
-from app.api.deps import get_db, get_current_user
+from app.api.deps import get_db, get_current_user, ensure_driver_profile
 from app.models.user import User
 from app.models.driver import Driver
 from app.models.vehicle import Vehicle
@@ -21,26 +21,21 @@ def get_driver_portal_data(
     current_user: User = Depends(get_current_user)
 ):
     norm_role = normalize_role(current_user.role)
-    if norm_role != "DRIVER" or not current_user.driver_id:
-        # Fallback to email search if driver_id not set on user model
-        if current_user.email:
-            d_found = db.query(Driver).filter(Driver.email == current_user.email).first()
-            if d_found:
-                current_user.driver_id = d_found.id
-            else:
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="Current user is not linked to an active driver profile."
-                )
-        else:
+    if norm_role != "DRIVER":
+        # Allow Admin and Logistics Manager to inspect driver portal if driver_id is set
+        if not current_user.driver_id:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Current user is not linked to an active driver profile."
             )
 
+    if not current_user.driver_id:
+        ensure_driver_profile(db, current_user)
+
     driver = db.query(Driver).filter(Driver.id == current_user.driver_id).first()
     if not driver:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Driver profile not found.")
+        # Re-ensure driver profile if driver ID was stale or missing
+        driver = ensure_driver_profile(db, current_user)
 
     vehicle = db.query(Vehicle).filter(Vehicle.id == driver.current_vehicle_id).first() if driver.current_vehicle_id else None
 

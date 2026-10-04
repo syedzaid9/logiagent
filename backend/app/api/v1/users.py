@@ -1,9 +1,18 @@
 import json
+import secrets
 from typing import List, Optional
 from datetime import datetime, timedelta
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session
-from app.api.deps import get_db, get_current_user, require_role, require_permission, build_user_response
+from sqlalchemy import func
+from app.api.deps import (
+    get_db,
+    get_current_user,
+    require_role,
+    require_permission,
+    build_user_response,
+    ensure_driver_profile
+)
 from app.core.security import get_password_hash, generate_activation_token
 from app.core.permissions import (
     PERMISSION_USERS_READ,
@@ -24,6 +33,8 @@ from app.schemas.user import (
     UserProvisionResponse,
     UserUpdateRequest,
     UserApprovalAction,
+    UserReissueInvitationResponse,
+    UserLinkDriverRequest,
     ApprovalPolicyResponse,
     ApprovalPolicyUpdate,
     RoleResponse,
@@ -135,10 +146,10 @@ def provision_user(
     db: Session = Depends(get_db)
 ):
     """
-    Provisions a new employee or driver account with cryptographic invitation token.
+    Provisions a new employee or driver account with cryptographic invitation token or initial credentials.
     """
     email_clean = req.email.strip().lower()
-    existing = db.query(User).filter(User.email == email_clean).first()
+    existing = db.query(User).filter(func.lower(User.email) == email_clean).first()
     if existing:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -170,6 +181,8 @@ def provision_user(
 
     token = generate_activation_token()
     token_expiry = datetime.utcnow() + timedelta(days=7)
+    # Temporary random sentinel hash until the user establishes their password during invitation acceptance
+    temp_pwd_hash = get_password_hash(generate_activation_token()[:24])
 
     if (req.auto_approve and current_user.role == "Admin") or not requires_approval:
         approval_st = "Approved"
@@ -181,8 +194,6 @@ def provision_user(
         account_st = "Pending_Activation"
         approved_by = None
         approved_at = None
-
-    temp_pwd_hash = get_password_hash(generate_activation_token()[:16])
 
     role_record = db.query(Role).filter(Role.name == req.role).first()
 
@@ -203,6 +214,12 @@ def provision_user(
         activation_expires_at=token_expiry
     )
     db.add(new_user)
+    db.flush()
+
+    # Automatically create/link Driver operational profile for Driver accounts if none was explicitly chosen
+    if req.role == "Driver" and not new_user.driver_id:
+        ensure_driver_profile(db, new_user, name=req.full_name.strip(), email=email_clean)
+
     db.commit()
     db.refresh(new_user)
 
@@ -210,13 +227,15 @@ def provision_user(
     if approval_st == "Pending_Approval":
         msg += " Account is pending higher authority approval before invitation activation."
     else:
-        msg += " Invitation activation token generated."
+        msg += " Secure invitation activation token generated."
 
     return UserProvisionResponse(
         success=True,
         message=msg,
         user=build_user_response(new_user, db),
         activation_token=token,
+        activation_expires_at=token_expiry,
+        development_invitation_url=f"/activate-account?token={token}",
         requires_approval=(approval_st == "Pending_Approval")
     )
 
@@ -267,17 +286,104 @@ def approve_user(
         db.refresh(target)
         return build_user_response(target, db)
 
-    # Approved: ensure activation token exists
-    if not target.activation_token:
+    # Approved: ensure activation token exists if user has not yet set a password
+    if not target.activation_token and target.account_status == "Pending_Activation":
         target.activation_token = generate_activation_token()
     target.activation_expires_at = datetime.utcnow() + timedelta(days=7)
 
     target.approval_status = "Approved"
-    target.account_status = "Pending_Activation" if not target.hashed_password or target.activation_token else "Active"
     target.approved_by_id = current_user.id
     target.approved_at = datetime.utcnow()
-    target.updated_at = datetime.utcnow()
 
+    # Automatically ensure operational Driver profile linkage on approval
+    if target.role == "Driver" and not target.driver_id:
+        ensure_driver_profile(db, target)
+
+    target.updated_at = datetime.utcnow()
+    db.commit()
+    db.refresh(target)
+    return build_user_response(target, db)
+
+@router.post("/{user_id}/reissue-invitation", response_model=UserReissueInvitationResponse)
+def reissue_user_invitation(
+    user_id: int,
+    current_user: User = Depends(require_permission(PERMISSION_USERS_MANAGE)),
+    db: Session = Depends(get_db)
+):
+    """
+    Reissues a cryptographic activation invitation token with a refreshed 7-day expiration window.
+    Admins never set user passwords; users set their own passwords through invitation acceptance.
+    """
+    target = db.query(User).filter(User.id == user_id).first()
+    if not target:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"User ID {user_id} not found.")
+
+    if current_user.role in ["Logistics Manager", "Fleet Manager"] and target.role in ["Admin", "Logistics Manager"]:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Managers can only reissue invitations for Driver or Dispatcher accounts."
+        )
+
+    token = generate_activation_token()
+    token_expiry = datetime.utcnow() + timedelta(days=7)
+
+    target.activation_token = token
+    target.activation_expires_at = token_expiry
+    if target.account_status == "Deactivated":
+        target.account_status = "Pending_Activation"
+        target.is_active = True
+
+    # Ensure driver profile is linked for Driver accounts
+    if target.role == "Driver" and not target.driver_id:
+        ensure_driver_profile(db, target)
+
+    target.updated_at = datetime.utcnow()
+    db.commit()
+    db.refresh(target)
+
+    return UserReissueInvitationResponse(
+        success=True,
+        message=f"Fresh activation token generated for {target.email}.",
+        activation_token=token,
+        activation_expires_at=token_expiry,
+        development_invitation_url=f"/activate-account?token={token}",
+        user=build_user_response(target, db)
+    )
+
+@router.post("/{user_id}/link-driver", response_model=UserResponse)
+def link_driver_profile(
+    user_id: int,
+    req: UserLinkDriverRequest,
+    current_user: User = Depends(require_permission(PERMISSION_USERS_MANAGE)),
+    db: Session = Depends(get_db)
+):
+    """
+    Associates or creates an operational Driver profile for a user account.
+    """
+    target = db.query(User).filter(User.id == user_id).first()
+    if not target:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"User ID {user_id} not found.")
+
+    if target.role != "Driver":
+        target.role = "Driver"
+
+    if req.driver_id:
+        driver = db.query(Driver).filter(Driver.id == req.driver_id).first()
+        if not driver:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Driver ID {req.driver_id} not found.")
+        target.driver_id = driver.id
+    else:
+        ensure_driver_profile(
+            db=db,
+            user=target,
+            name=target.full_name,
+            email=target.email,
+            phone=req.phone,
+            license_number=req.license_number,
+            license_type=req.license_type or "CDL-A"
+        )
+
+    target.updated_at = datetime.utcnow()
     db.commit()
     db.refresh(target)
     return build_user_response(target, db)
@@ -325,6 +431,11 @@ def activate_user(
 
     target.account_status = "Active"
     target.is_active = True
+
+    # Ensure operational profile linkage if driver
+    if target.role == "Driver" and not target.driver_id:
+        ensure_driver_profile(db, target)
+
     target.updated_at = datetime.utcnow()
     db.commit()
     db.refresh(target)

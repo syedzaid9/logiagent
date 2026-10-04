@@ -26,28 +26,60 @@ class EmbeddingsService:
                 self._local_model = SentenceTransformer(settings.EMBEDDING_MODEL_NAME)
                 logger.info(f"[EmbeddingsService] Local embedding model loaded successfully.")
             except Exception as e:
-                logger.error(f"[EmbeddingsService] Failed to load SentenceTransformer: {e}")
-                # Fallback to transformers directly
-                from transformers import AutoTokenizer, AutoModel
-                import torch
-                class SimpleHFEmbedder:
-                    def __init__(self, name):
-                        self.tokenizer = AutoTokenizer.from_pretrained(name)
-                        self.model = AutoModel.from_pretrained(name)
-                    def encode(self, texts, **kwargs):
-                        if isinstance(texts, str):
-                            texts = [texts]
-                        inputs = self.tokenizer(texts, padding=True, truncation=True, max_length=512, return_tensors="pt")
-                        with torch.no_grad():
-                            out = self.model(**inputs)
-                            # Mean pooling
-                            mask = inputs["attention_mask"].unsqueeze(-1).expand(out.last_hidden_state.size()).float()
-                            sum_emb = torch.sum(out.last_hidden_state * mask, 1)
-                            sum_mask = torch.clamp(mask.sum(1), min=1e-9)
-                            pooled = sum_emb / sum_mask
-                            return pooled.cpu().numpy()
-                self._local_model = SimpleHFEmbedder(settings.EMBEDDING_MODEL_NAME)
-                logger.info(f"[EmbeddingsService] Fallback HuggingFace embedder loaded successfully.")
+                logger.warning(f"[EmbeddingsService] SentenceTransformer not available: {e}. Trying transformers...")
+                try:
+                    from transformers import AutoTokenizer, AutoModel
+                    import torch
+                    class SimpleHFEmbedder:
+                        def __init__(self, name):
+                            self.tokenizer = AutoTokenizer.from_pretrained(name)
+                            self.model = AutoModel.from_pretrained(name)
+                        def encode(self, texts, **kwargs):
+                            if isinstance(texts, str):
+                                texts = [texts]
+                            inputs = self.tokenizer(texts, padding=True, truncation=True, max_length=512, return_tensors="pt")
+                            with torch.no_grad():
+                                out = self.model(**inputs)
+                                mask = inputs["attention_mask"].unsqueeze(-1).expand(out.last_hidden_state.size()).float()
+                                sum_emb = torch.sum(out.last_hidden_state * mask, 1)
+                                sum_mask = torch.clamp(mask.sum(1), min=1e-9)
+                                pooled = sum_emb / sum_mask
+                                return pooled.cpu().numpy()
+                    self._local_model = SimpleHFEmbedder(settings.EMBEDDING_MODEL_NAME)
+                    logger.info(f"[EmbeddingsService] Fallback HuggingFace embedder loaded successfully.")
+                except Exception as ex2:
+                    logger.warning(f"[EmbeddingsService] Transformers not available: {ex2}. Using deterministic hash embedder.")
+                    import hashlib
+                    class DeterministicHashEmbedder:
+                        def __init__(self, dim=384):
+                            self.dim = dim
+                            self.stopwords = {
+                                "what", "is", "the", "a", "an", "and", "or", "of", "for", "in",
+                                "to", "on", "at", "by", "with", "about", "are", "how", "do", "does"
+                            }
+                        def encode(self, texts, **kwargs):
+                            is_single = isinstance(texts, str)
+                            text_list = [texts] if is_single else texts
+                            vectors = []
+                            for t in text_list:
+                                vec = [0.0] * self.dim
+                                cleaned = "".join(c if c.isalnum() else " " for c in t.lower())
+                                words = cleaned.split()
+                                for i, w in enumerate(words):
+                                    if len(w) <= 1:
+                                        continue
+                                    weight = 0.15 if w in self.stopwords else 1.0
+                                    h = int(hashlib.sha256(w.encode("utf-8")).hexdigest(), 16)
+                                    idx = h % self.dim
+                                    vec[idx] += weight * (1.0 + ((h >> 8) % 100) / 500.0)
+                                    if i + 1 < len(words):
+                                        bg = f"{w}_{words[i+1]}"
+                                        h_bg = int(hashlib.sha256(bg.encode("utf-8")).hexdigest(), 16)
+                                        vec[h_bg % self.dim] += weight * 1.5
+                                norm = math.sqrt(sum(x*x for x in vec)) or 1.0
+                                vectors.append([x / norm for x in vec])
+                            return np.array(vectors[0]) if is_single else np.array(vectors)
+                    self._local_model = DeterministicHashEmbedder(self.embedding_dimension)
         return self._local_model
 
     def _normalize(self, vec: List[float]) -> List[float]:

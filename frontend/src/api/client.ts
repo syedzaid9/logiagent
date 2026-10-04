@@ -1,4 +1,5 @@
-const BASE_URL = '/api/v1';
+const metaEnv = (import.meta as any).env || {};
+const BASE_URL = (metaEnv.VITE_API_BASE_URL ? `${metaEnv.VITE_API_BASE_URL.replace(/\/$/, '')}/api/v1` : '/api/v1');
 
 export async function apiRequest<T>(
   endpoint: string,

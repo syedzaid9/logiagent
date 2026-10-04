@@ -308,6 +308,59 @@ LogiAgent implements a multi-tier RBAC system with 7 operational personas:
 - **Backend Protection:** Endpoints are guarded via `has_permission(role, permission)` dependencies and database-level user lookup.
 - **Frontend Protection:** Components use `<PermissionGate permission="...">` wrappers to conditionally render UI controls, action buttons, and navigation tabs.
 
+### 🚛 Admin-Created Driver Account Workflow
+
+When an administrator provisions a commercial driver account through the **User Accounts & RBAC Management** interface (`/users/provision`), the system orchestrates a synchronized authentication and operational lifecycle:
+
+```mermaid
+graph TD
+    A[Admin Provisions Driver Account] --> B[User Record Created in users Table]
+    B --> C[Driver Operational Profile Auto-Linked / Created in drivers Table]
+    C --> D{Approval Policy Check}
+    D -->|Auto-Approved / Admin| E[Approval Status = Approved]
+    D -->|Requires Approval| F[Approval Status = Pending_Approval]
+    F -->|Manager / Admin Reviews| E
+    E --> G{Credential Setup Option}
+    G -->|Generate Temp Password| H[Temporary Password Generated & Displayed to Admin]
+    G -->|Specify Custom Password| I[Password Stored as Salted SHA-256 Hash]
+    G -->|Invitation Token| J[Cryptographic Activation Token Generated]
+    H --> K[Account Status = Active]
+    I --> K
+    J --> L[Account Status = Pending_Activation]
+    L -->|Driver Activates via Token| K
+    K --> M[Driver Logs In via Email or Shorthand]
+    M --> N[Driver Enters Driver Portal with Authoritative Route & Telemetry]
+```
+
+#### Step-by-Step Lifecycle:
+
+1. **Admin Creates Driver:**
+   - The administrator inputs the driver's full name, email, and role (`Driver`).
+   - The administrator chooses between linking an existing driver profile or allowing the system to automatically generate a dedicated operational profile with commercial license defaults and telemetry hooks.
+   - The administrator selects the initial authentication method:
+     - **Generate Temporary Password:** Immediate 1-click password generation for direct operator sign in.
+     - **Specify Initial Password:** Explicit password assignment.
+     - **Invitation Token:** Cryptographic token valid for 7 days.
+
+2. **Driver Profile Linkage:**
+   - The backend automatically associates `user.driver_id` with the operational `Driver` record in the `drivers` table.
+   - This ensures the driver is never orphaned without an operational profile and eliminates telemetry loading errors upon first login.
+
+3. **Account & Approval Governance:**
+   - **Account Status:** `Active`, `Pending_Activation`, `Suspended`, or `Deactivated`.
+   - **Approval Status:** `Approved`, `Pending_Approval`, or `Rejected`.
+   - Accounts requiring higher-authority authorization remain in the pending queue until approved by an authorized manager or administrator.
+
+4. **Credential Setup & Administrator Reset:**
+   - Administrators can reset or configure credentials anytime from the RBAC table by clicking the **Key Icon (Set/Reset Password)** action button.
+   - The administrator can either generate a new temporary password on the fly or specify a custom password.
+   - The administrator can also click the **Mail Icon (Reissue Invitation)** to generate a fresh activation token.
+
+5. **Driver Login & Portal Access:**
+   - The driver signs in at the login screen using their work email (or shorthand username) and established password.
+   - Upon authentication, the backend issues a role-scoped JWT containing `sub` (User ID), `role` (`Driver`), and `driver_id`.
+   - The driver portal instantly loads live route assignments, active shipments, HOS compliance gauges, and GPS corridor telemetry.
+
 ---
 
 ## 🤖 AI & RAG Architecture
@@ -545,9 +598,13 @@ Double-click [`start_all.bat`](file:///c:/Users/Zaids/Desktop/logistic%20agent/s
 ```
 *This automatically starts the FastAPI backend on port 8000 and the Vite frontend on port 5173 in separate windows.*
 
-#### Option B: Docker Compose (All Platforms)
+#### Option B: Production Docker Compose (PostgreSQL 16 + pgvector + Redis + Nginx)
 ```bash
-docker compose up --build
+# Build and run the complete multi-service stack
+docker compose up -d --build
+
+# Check status of all 4 services
+docker compose ps
 ```
 
 #### Option C: Manual Command-Line Startup
@@ -571,12 +628,12 @@ npm run dev
 
 ### 4. Access URLs & Endpoints
 
-| Resource | URL | Description |
-|---|---|---|
-| **Frontend Application** | [http://localhost:5173](http://localhost:5173) | Main React operations cockpit |
-| **API Swagger Docs** | [http://localhost:8000/docs](http://localhost:8000/docs) | Interactive OpenAPI documentation |
-| **API ReDoc** | [http://localhost:8000/redoc](http://localhost:8000/redoc) | Alternative API documentation |
-| **Health Check** | [http://localhost:8000/health](http://localhost:8000/health) | Backend health status |
+| Resource | Docker Production URL | Local Dev URL | Description |
+|---|---|---|---|
+| **Frontend Application** | [http://localhost:3000](http://localhost:3000) | [http://localhost:5173](http://localhost:5173) | Main React operations cockpit & Nginx reverse proxy |
+| **API Swagger Docs** | [http://localhost:3000/docs](http://localhost:3000/docs) (or :8000/docs) | [http://localhost:8000/docs](http://localhost:8000/docs) | Interactive OpenAPI documentation |
+| **API ReDoc** | [http://localhost:3000/redoc](http://localhost:3000/redoc) | [http://localhost:8000/redoc](http://localhost:8000/redoc) | Alternative API documentation |
+| **Health Check** | [http://localhost:3000/api/v1/health](http://localhost:3000/api/v1/health) | [http://localhost:8000/health](http://localhost:8000/health) | Backend health status & readiness probe |
 
 ---
 
@@ -602,27 +659,32 @@ The database includes pre-seeded user accounts for testing each role:
 
 LogiAgent includes an automated test suite covering unit tests, RBAC access control, ML models, RAG vector retrieval, and end-to-end AI agent scenarios.
 
-### 1. Run Automated Test Suite (101 Tests)
+### 1. Run Automated Test Suite (106 Tests)
 ```bash
+# Inside Docker backend container:
+docker compose exec backend pytest -v
+
+# Or locally:
 cd backend
 pytest -v
 ```
 
 ```text
 ================================= test session starts =================================
-collected 101 items
+collected 106 items
 
-tests/test_agent.py .........................                                  [ 24%]
-tests/test_auth.py .......                                                     [ 31%]
-tests/test_ml.py ..........                                                    [ 41%]
-tests/test_phase10_hardening.py .............                                  [ 54%]
-tests/test_phase11_ai.py .................                                     [ 71%]
+tests/test_agent.py .........................                                  [ 23%]
+tests/test_auth.py .......                                                     [ 30%]
+tests/test_auth_admin_driver.py .....                                          [ 35%]
+tests/test_ml.py ..........                                                    [ 44%]
+tests/test_phase10_hardening.py .............                                  [ 56%]
+tests/test_phase11_ai.py .................                                     [ 72%]
 tests/test_phase9_auth_rbac.py .............                                   [ 84%]
 tests/test_rag.py ......                                                       [ 90%]
 tests/test_rbac_telemetry.py .......                                           [ 97%]
 tests/test_settings.py ...                                                     [100%]
 
-================================= 101 passed in 89.31s =================================
+======================== 106 passed, 135 warnings in 8.67s ========================
 ```
 
 ### 2. Run End-to-End AI Agent Scenario Verification

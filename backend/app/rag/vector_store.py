@@ -137,7 +137,7 @@ class SupabasePgVectorStore:
         user_role: Optional[str] = None,
         top_k: int = 4,
         category: Optional[str] = None,
-        min_similarity: float = 0.20
+        min_similarity: float = 0.05
     ) -> List[Tuple[DocumentChunkDTO, float]]:
         """
         Execute vector similarity search in Supabase PostgreSQL using pgvector cosine distance (<=>).
@@ -173,12 +173,12 @@ class SupabasePgVectorStore:
                 dc.metadata_json,
                 (1.0 - (dc.embedding <=> CAST(:query_vec AS vector))) AS similarity_score
             FROM document_chunks dc
-            WHERE (:category_filter IS NULL OR dc.category ILIKE :category_filter)
+            WHERE (CAST(:category_filter AS VARCHAR) IS NULL OR dc.category ILIKE CAST(:category_filter AS VARCHAR))
               AND (
-                :is_admin = TRUE
+                CAST(:is_admin AS BOOLEAN) = TRUE
                 OR dc.access_scope = 'PUBLIC_OPERATIONAL'
-                OR dc.allowed_roles ILIKE :role_filter
-                OR dc.allowed_roles ILIKE :role_filter_alt
+                OR dc.allowed_roles ILIKE CAST(:role_filter AS VARCHAR)
+                OR dc.allowed_roles ILIKE CAST(:role_filter_alt AS VARCHAR)
               )
             ORDER BY dc.embedding <=> CAST(:query_vec AS vector) ASC
             LIMIT :top_k;

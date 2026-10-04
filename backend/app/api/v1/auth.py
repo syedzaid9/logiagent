@@ -1,8 +1,10 @@
+import secrets
 from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from datetime import datetime
-from app.api.deps import get_db, get_current_user, build_user_response
+from sqlalchemy import func
+from datetime import datetime, timedelta
+from app.api.deps import get_db, get_current_user, build_user_response, ensure_driver_profile
 from app.core.security import get_password_hash, verify_password, create_access_token
 from app.core.rate_limiter import rate_limit
 from app.core.config import settings
@@ -10,7 +12,19 @@ from app.models.user import User
 from app.models.role import Role
 from app.models.approval_policy import ApprovalPolicy
 from app.models.driver import Driver
-from app.schemas.auth import UserCreate, UserLogin, UserResponse, TokenResponse
+from app.schemas.auth import (
+    UserCreate,
+    UserLogin,
+    UserResponse,
+    TokenResponse,
+    ForgotPasswordRequest,
+    ForgotPasswordResponse,
+    ResetPasswordValidationResponse,
+    ResetPasswordRequest,
+    ResetPasswordResponse,
+    ChangePasswordRequest,
+    ChangePasswordResponse,
+)
 from app.schemas.user import InvitationValidationResponse, AcceptInvitationRequest
 
 router = APIRouter(prefix="/auth", tags=["Authentication & RBAC"])
@@ -25,7 +39,7 @@ def register(user_in: UserCreate, db: Session = Depends(get_db)):
     Registers a new operational user account with active status.
     """
     email_clean = user_in.email.strip().lower()
-    existing = db.query(User).filter(User.email == email_clean).first()
+    existing = db.query(User).filter(func.lower(User.email) == email_clean).first()
     if existing:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -36,7 +50,7 @@ def register(user_in: UserCreate, db: Session = Depends(get_db)):
     role_record = db.query(Role).filter(Role.name == user_in.role).first()
     role_id_val = role_record.id if role_record else None
 
-    # Check if this email corresponds to a driver profile
+    # Check if this email corresponds to an existing driver profile
     driver_link = db.query(Driver).filter(Driver.email == email_clean).first()
     driver_id_val = driver_link.id if driver_link else None
 
@@ -52,6 +66,11 @@ def register(user_in: UserCreate, db: Session = Depends(get_db)):
         is_active=True
     )
     db.add(user)
+    db.flush()
+
+    if user.role == "Driver" and not user.driver_id:
+        ensure_driver_profile(db, user, name=user.full_name, email=email_clean)
+
     db.commit()
     db.refresh(user)
 
@@ -152,11 +171,7 @@ def login(login_data: UserLogin, db: Session = Depends(get_db)):
 
     # Link driver if not set
     if user.role == "Driver" and not user.driver_id:
-        driver_match = db.query(Driver).filter(Driver.email == user.email).first()
-        if driver_match:
-            user.driver_id = driver_match.id
-            db.commit()
-            db.refresh(user)
+        ensure_driver_profile(db, user, name=user.full_name, email=user.email)
 
     token = create_access_token(subject=user.id, role=user.role, driver_id=user.driver_id)
     return TokenResponse(
@@ -259,6 +274,10 @@ def accept_invitation(
     user.account_status = "Active"
     user.approval_status = "Approved"
     user.is_active = True
+
+    if user.role == "Driver" and not user.driver_id:
+        ensure_driver_profile(db, user, name=user.full_name, email=user.email)
+
     user.updated_at = datetime.utcnow()
     db.commit()
     db.refresh(user)
@@ -268,4 +287,127 @@ def accept_invitation(
         access_token=token_jwt,
         token_type="bearer",
         user=build_user_response(user, db)
+    )
+
+@router.post(
+    "/forgot-password",
+    response_model=ForgotPasswordResponse,
+    dependencies=[Depends(rate_limit(max_requests=10, window_seconds=60, key_prefix="auth_forgot"))]
+)
+def forgot_password(req: ForgotPasswordRequest, db: Session = Depends(get_db)):
+    """
+    Generates a secure, single-use password reset token with a 24-hour expiration window.
+    Does not disclose account presence to prevent user enumeration attacks.
+    """
+    clean_email = req.email.strip().lower()
+    user = db.query(User).filter(func.lower(User.email) == clean_email).first()
+
+    reset_token = None
+    reset_url = None
+
+    if user:
+        reset_token = secrets.token_urlsafe(32)
+        user.reset_password_token = reset_token
+        user.reset_password_expires_at = datetime.utcnow() + timedelta(hours=24)
+        user.updated_at = datetime.utcnow()
+        db.commit()
+        reset_url = f"/reset-password?token={reset_token}"
+
+    return ForgotPasswordResponse(
+        success=True,
+        message="If an account with this email address exists in LogiAgent, password reset instructions have been generated.",
+        reset_token=reset_token,
+        reset_url=reset_url
+    )
+
+@router.get("/reset-password/{token}", response_model=ResetPasswordValidationResponse)
+def get_reset_password_details(token: str, db: Session = Depends(get_db)):
+    """
+    Validates password reset token before the user submits their new password.
+    """
+    user = db.query(User).filter(User.reset_password_token == token).first()
+    if not user:
+        return ResetPasswordValidationResponse(valid=False, message="Invalid or nonexistent password reset link.")
+
+    if user.reset_password_expires_at and user.reset_password_expires_at < datetime.utcnow():
+        return ResetPasswordValidationResponse(valid=False, message="Password reset link has expired. Please request a new one.")
+
+    return ResetPasswordValidationResponse(
+        valid=True,
+        email=user.email,
+        message="Password reset link is valid."
+    )
+
+@router.post(
+    "/reset-password",
+    response_model=ResetPasswordResponse,
+    dependencies=[Depends(rate_limit(max_requests=10, window_seconds=60, key_prefix="auth_reset"))]
+)
+def reset_password(req: ResetPasswordRequest, db: Session = Depends(get_db)):
+    """
+    Resets the user's password using a verified single-use reset token and invalidates the token.
+    """
+    user = db.query(User).filter(User.reset_password_token == req.token).first()
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid or nonexistent password reset link."
+        )
+
+    if user.reset_password_expires_at and user.reset_password_expires_at < datetime.utcnow():
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Password reset link has expired. Please request a fresh reset link."
+        )
+
+    if len(req.password.strip()) < 6:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Password must be at least 6 characters long."
+        )
+
+    user.hashed_password = get_password_hash(req.password.strip())
+    user.reset_password_token = None
+    user.reset_password_expires_at = None
+    if user.account_status in ["Pending_Activation", "Pending"]:
+        user.account_status = "Active"
+        user.is_active = True
+
+    user.updated_at = datetime.utcnow()
+    db.commit()
+
+    return ResetPasswordResponse(
+        success=True,
+        message="Password successfully reset. You may now sign in with your new credentials."
+    )
+
+@router.post("/change-password", response_model=ChangePasswordResponse)
+def change_password(
+    req: ChangePasswordRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Allows any authenticated user (Admin, Manager, Dispatcher, Driver, Analyst, etc.) to change their own password.
+    Requires verification of their current password.
+    """
+    if not current_user.hashed_password or not verify_password(req.current_password.strip(), current_user.hashed_password):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Current password verification failed. Please enter your existing password accurately."
+        )
+
+    if len(req.new_password.strip()) < 6:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="New password must be at least 6 characters long."
+        )
+
+    current_user.hashed_password = get_password_hash(req.new_password.strip())
+    current_user.updated_at = datetime.utcnow()
+    db.commit()
+
+    return ChangePasswordResponse(
+        success=True,
+        message="Your password has been successfully updated."
     )
