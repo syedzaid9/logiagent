@@ -1,18 +1,18 @@
 # ==============================================================================
-# LogiAgent — Render Production Infrastructure Blueprint
+# LogiAgent — Render Free Infrastructure Blueprint
 # Documentation: https://render.com/docs/infrastructure-as-code
 # ==============================================================================
 
 services:
   # ----------------------------------------------------------------------------
-  # 1. LogiAgent FastAPI Backend Web Service
+  # 1. LogiAgent FastAPI Backend Web Service (Free Tier)
   # ----------------------------------------------------------------------------
   - type: web
     name: logiagent-backend
     runtime: docker
     dockerContext: ./backend
     dockerfilePath: ./backend/Dockerfile
-    plan: starter
+    plan: free
     region: oregon
     healthCheckPath: /health
     envVars:
@@ -28,7 +28,7 @@ services:
           property: connectionString
       - key: REDIS_URL
         fromService:
-          type: redis
+          type: keyvalue
           name: logiagent-redis
           property: connectionString
       - key: JWT_SECRET
@@ -48,19 +48,19 @@ services:
       - key: RATE_LIMIT_ENABLED
         value: "True"
       - key: GEMINI_API_KEY
-        sync: false # Set securely in Render dashboard (optional: fallback engine included)
+        sync: false # Optional: Set securely in Render dashboard (fallback deterministic engine included)
       - key: OPENAI_API_KEY
-        sync: false # Set securely in Render dashboard (optional)
+        sync: false # Optional: Set securely in Render dashboard
 
   # ----------------------------------------------------------------------------
-  # 2. LogiAgent React + Vite + Nginx Frontend Web Service
+  # 2. LogiAgent React + Vite + Nginx Frontend Web Service (Free Tier)
   # ----------------------------------------------------------------------------
   - type: web
     name: logiagent-frontend
     runtime: docker
     dockerContext: ./frontend
     dockerfilePath: ./frontend/Dockerfile
-    plan: starter
+    plan: free
     region: oregon
     healthCheckPath: /healthz
     envVars:
@@ -69,25 +69,26 @@ services:
       - key: VITE_API_BASE_URL
         value: https://logiagent-backend.onrender.com
 
+  # ----------------------------------------------------------------------------
+  # 3. LogiAgent Key Value / Redis Cache (Free Tier)
+  # ----------------------------------------------------------------------------
+  - type: keyvalue
+    name: logiagent-redis
+    plan: free
+    region: oregon
+    ipAllowList: [] # Strict internal access only
+
 # ------------------------------------------------------------------------------
-# Managed Databases & Key-Value Stores
+# Managed Databases
 # ------------------------------------------------------------------------------
 databases:
   # ----------------------------------------------------------------------------
-  # PostgreSQL 16 Database with pgvector Extension
+  # PostgreSQL 16 Database with pgvector Extension (Free Tier)
   # ----------------------------------------------------------------------------
   - name: logiagent-postgres
     databaseName: logiagent_db
     user: logiagent
-    plan: starter
+    plan: free
     region: oregon
     postgresMajorVersion: "16"
-    ipAllowList: [] # Strict internal access only
-
-  # ----------------------------------------------------------------------------
-  # Redis 7 In-Memory Cache
-  # ----------------------------------------------------------------------------
-  - name: logiagent-redis
-    plan: starter
-    region: oregon
     ipAllowList: [] # Strict internal access only
