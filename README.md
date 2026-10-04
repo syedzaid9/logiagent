@@ -24,12 +24,19 @@
   <a href="#-role-based-access-control-rbac">RBAC</a> •
   <a href="#-ai--rag-architecture">AI & RAG</a> •
   <a href="#%EF%B8%8F-database-architecture">Database</a> •
+  <a href="#-cloud-deployment-render">Deployment</a> •
   <a href="#-quick-start">Quick Start</a>
 </p>
 
-> 🚀 **Live Demo:** Deployment pending
+> ### 🔗 Live Links
 >
-> 📚 **API Documentation:** `http://localhost:8000/docs` (Swagger UI) & `http://localhost:8000/redoc` (ReDoc)
+> 🚀 **Live Demo:** [https://logiagent-frontend.onrender.com](https://logiagent-frontend.onrender.com/)
+>
+> ⚙️ **Backend API:** [https://logiagent-backend.onrender.com](https://logiagent-backend.onrender.com/)
+>
+> 📚 **API Documentation (Swagger):** [https://logiagent-backend.onrender.com/docs](https://logiagent-backend.onrender.com/docs)
+>
+> ❤️ **Backend Health Check:** [https://logiagent-backend.onrender.com/health](https://logiagent-backend.onrender.com/health)
 >
 > 💻 **GitHub Repository:** [https://github.com/syedzaid9/logiagent](https://github.com/syedzaid9/logiagent)
 
@@ -49,8 +56,9 @@
 9. [Project Structure](#-project-structure)
 10. [Technology Stack](#%EF%B8%8F-technology-stack)
 11. [Docker Architecture](#-docker-architecture)
-12. [Quick Start & Local Setup](#-quick-start)
-13. [Testing & Verification](#-testing--verification)
+12. [Cloud Deployment (Render)](#-cloud-deployment-render)
+13. [Quick Start & Local Setup](#-quick-start)
+14. [Testing & Verification](#-testing--verification)
 
 ---
 
@@ -560,6 +568,27 @@ docker compose up --build
 
 ---
 
+## 🌐 Cloud Deployment (Render)
+
+LogiAgent is deployed to the public cloud using **Render** as a multi-service containerized architecture:
+
+| Component | Service Name | Platform / Plan | Public URL / Endpoint | Purpose |
+|---|---|---|---|---|
+| **Frontend SPA** | `logiagent-frontend` | Render Web Service (Free) | [https://logiagent-frontend.onrender.com](https://logiagent-frontend.onrender.com/) | React 18 + Vite dashboard served via Nginx |
+| **Backend API** | `logiagent-backend` | Render Web Service (Free) | [https://logiagent-backend.onrender.com](https://logiagent-backend.onrender.com/) | FastAPI gateway, LangGraph AI agent & REST API |
+| **API Swagger** | `logiagent-backend` | Render Web Service (Free) | [https://logiagent-backend.onrender.com/docs](https://logiagent-backend.onrender.com/docs) | Interactive OpenAPI / Swagger interface |
+| **Health Check** | `logiagent-backend` | Render Web Service (Free) | [https://logiagent-backend.onrender.com/health](https://logiagent-backend.onrender.com/health) | Live service health & readiness probe |
+| **Database** | `logiagent-postgres` | Render Managed PostgreSQL 16 (Free) | Internal Network | PostgreSQL database with pgvector extension enabled |
+| **Cache** | `logiagent-redis` | Render Key Value / Valkey (Free) | Internal Network | Redis-compatible in-memory caching and rate limiting |
+
+> [!NOTE]
+> **Free-Tier Operational Characteristics:**
+> - **Inactivity Spin-Down (Cold Start):** Free web services on Render spin down after 15 minutes of inactivity. The initial HTTP request may take ~50 seconds to wake up the service.
+> - **PostgreSQL Storage & Retention:** The demo database is provisioned on Render's free tier (1 GB storage), with automatic startup schema creation and data seeding.
+> - **Redis/Key Value:** Configured on the free tier (25 MB in-memory) for rate-limiting and temporary state caching.
+
+---
+
 ## 🚀 Quick Start
 
 ### Prerequisites
@@ -628,12 +657,24 @@ npm run dev
 
 ### 4. Access URLs & Endpoints
 
-| Resource | Docker Production URL | Local Dev URL | Description |
+#### 🌐 Production Cloud URLs (Render)
+| Resource | Production URL | Description |
+|---|---|---|
+| **Live Demo (Frontend)** | [https://logiagent-frontend.onrender.com](https://logiagent-frontend.onrender.com/) | Main React operations cockpit & live demo |
+| **Backend API Gateway** | [https://logiagent-backend.onrender.com](https://logiagent-backend.onrender.com/) | FastAPI backend root service |
+| **Interactive Swagger Docs** | [https://logiagent-backend.onrender.com/docs](https://logiagent-backend.onrender.com/docs) | OpenAPI interactive documentation |
+| **API ReDoc** | [https://logiagent-backend.onrender.com/redoc](https://logiagent-backend.onrender.com/redoc) | Alternative OpenAPI documentation |
+| **Backend Health Check** | [https://logiagent-backend.onrender.com/health](https://logiagent-backend.onrender.com/health) | Live health status & readiness probe |
+
+#### 💻 Local Development URLs
+| Resource | Local URL | Port / Proxy | Description |
 |---|---|---|---|
-| **Frontend Application** | [http://localhost:3000](http://localhost:3000) | [http://localhost:5173](http://localhost:5173) | Main React operations cockpit & Nginx reverse proxy |
-| **API Swagger Docs** | [http://localhost:3000/docs](http://localhost:3000/docs) (or :8000/docs) | [http://localhost:8000/docs](http://localhost:8000/docs) | Interactive OpenAPI documentation |
-| **API ReDoc** | [http://localhost:3000/redoc](http://localhost:3000/redoc) | [http://localhost:8000/redoc](http://localhost:8000/redoc) | Alternative API documentation |
-| **Health Check** | [http://localhost:3000/api/v1/health](http://localhost:3000/api/v1/health) | [http://localhost:8000/health](http://localhost:8000/health) | Backend health status & readiness probe |
+| **Frontend Application (Docker)** | [http://localhost:3000](http://localhost:3000) | `3000` (Nginx Proxy) | React SPA with `/api` reverse proxy |
+| **Frontend Application (Dev Server)** | [http://localhost:5173](http://localhost:5173) | `5173` (Vite) | Vite HMR local dev server |
+| **Backend API (Local)** | [http://localhost:8000](http://localhost:8000) | `8000` (FastAPI) | Local FastAPI application server |
+| **API Swagger Docs (Local)** | [http://localhost:8000/docs](http://localhost:8000/docs) | `8000` (or :3000/docs) | Interactive OpenAPI documentation |
+| **API ReDoc (Local)** | [http://localhost:8000/redoc](http://localhost:8000/redoc) | `8000` (or :3000/redoc) | Alternative API documentation |
+| **Backend Health Check (Local)** | [http://localhost:8000/health](http://localhost:8000/health) | `8000` (or :3000/api/v1/health) | Local health status & readiness probe |
 
 ---
 
