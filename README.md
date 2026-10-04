@@ -19,6 +19,7 @@
 <p align="center">
   <a href="#-project-overview">Overview</a> •
   <a href="#-key-features">Key Features</a> •
+  <a href="#-screenshots">Screenshots</a> •
   <a href="#%EF%B8%8F-system-architecture">Architecture</a> •
   <a href="#-data-flow">Data Flow</a> •
   <a href="#-role-based-access-control-rbac">RBAC</a> •
@@ -28,17 +29,7 @@
   <a href="#-quick-start">Quick Start</a>
 </p>
 
-> ### 🔗 Live Links
->
-> 🚀 **Live Demo:** [https://logiagent-frontend.onrender.com](https://logiagent-frontend.onrender.com/)
->
-> ⚙️ **Backend API:** [https://logiagent-backend.onrender.com](https://logiagent-backend.onrender.com/)
->
-> 📚 **API Documentation (Swagger):** [https://logiagent-backend.onrender.com/docs](https://logiagent-backend.onrender.com/docs)
->
-> ❤️ **Backend Health Check:** [https://logiagent-backend.onrender.com/health](https://logiagent-backend.onrender.com/health)
->
-> 💻 **GitHub Repository:** [https://github.com/syedzaid9/logiagent](https://github.com/syedzaid9/logiagent)
+> 🚀 **Live Demo:** [Open LogiAgent →](https://logiagent-frontend.onrender.com/)
 
 </div>
 
@@ -47,7 +38,7 @@
 ## 📖 Table of Contents
 1. [Project Overview](#-project-overview)
 2. [Key Features](#-key-features)
-3. [Visual Showcase](#-visual-showcase)
+3. [Screenshots](#-screenshots)
 4. [System Architecture](#%EF%B8%8F-system-architecture)
 5. [Data Flow](#-data-flow)
 6. [Role-Based Access Control (RBAC)](#-role-based-access-control-rbac)
@@ -145,19 +136,63 @@ Logistics Operators (Manager | Dispatcher | Fleet | Driver | Analyst | Ops | Adm
 
 ---
 
-## 📸 Visual Showcase
+## 📸 Screenshots
 
-> 📸 **Screenshots:** Application interface screenshots can be added here following deployment or demo environment capture.
+LogiAgent provides a responsive operations cockpit built with React 18, TypeScript, and Tailwind CSS:
 
-LogiAgent provides a comprehensive user interface built with React, TypeScript, and Tailwind CSS:
+### 1. Operations Dashboard & Governance Console
+*Real-time logistics command center showing fleet utilization gauges, shipment progression charts, active exception monitors, and system health telemetry.*
 
-1. **Role-Specific Dashboards:** 7 tailored cockpit views for Admin, Logistics Manager, Dispatcher, Fleet Manager, Driver, Analyst, and Operations Team.
-2. **Interactive AI Assistant:** Slide-out conversational panel featuring quick prompts, markdown output, live execution traces, and structured telemetry cards.
-3. **Route Visualizer:** Map visualization showing route corridors, traffic indicators, and turn-by-turn waypoints.
-4. **Shipment Command Center:** Searchable, sortable freight grid with real-time status badges, delay alerts, and detailed modal dialogs.
-5. **Fleet & Driver Roster:** Asset management grid with capacity utilization gauges, HOS compliance meters, and vehicle health metrics.
-6. **Policy Explorer:** Semantic SOP document viewer with instant vector query search and source citations.
-7. **System Settings:** Administrative configuration for SLA targets, rate limits, notification preferences, and AI provider selection.
+![LogiAgent Operations Dashboard](docs/screenshots/dashboard.png)
+
+---
+
+### 2. Shipment Command Center
+*Multi-parameter freight management grid with live status badges, delay risk indicators, destination hubs, and detailed tracking modal inspection.*
+
+![Shipment Management](docs/screenshots/shipments.png)
+
+---
+
+### 3. Route Optimization & Highway Corridor Visualizer
+*Interactive continental waypoint mapping, corridor bottlenecks, turn-by-turn routing telemetry, and transit cost modeling.*
+
+![Route Optimization & Corridor Visualizer](docs/screenshots/routes.png)
+
+---
+
+### 4. LangGraph AI Operations Assistant
+*Autonomous AI assistant featuring multi-tool execution traces, step-by-step reasoning logs, structured UI telemetry cards, and natural language query resolution.*
+
+![LogiAgent AI Assistant](docs/screenshots/ai-assistant.png)
+
+---
+
+### 5. RAG Compliance & SOP Policy Knowledge Base
+*Semantic vector search over company Standard Operating Procedures (pgvector cosine similarity) with role-scoped access control and source citations.*
+
+![RAG Policy Knowledge Base](docs/screenshots/rag-search.png)
+
+---
+
+### 6. Analytics & Supply Chain Cost Modeling
+*Logistics KPI analytics, on-time delivery metrics, 7-day predictive demand volume forecasting, and cost breakdowns.*
+
+![Logistics Analytics & KPIs](docs/screenshots/analytics.png)
+
+---
+
+### 7. Role-Based Access Control (RBAC) & User Management
+*Enterprise account administration, invitation token workflows, approval hierarchies, and role permission matrices for 7 personas.*
+
+![Role-Based Access Control & User Management](docs/screenshots/rbac.png)
+
+---
+
+### 8. Authentication & Multi-Persona Portal
+*Secure JWT authentication portal with single-click demo persona switching across Admin, Manager, Dispatcher, Fleet, Driver, Analyst, and Ops.*
+
+![Authentication & Multi-Persona Portal](docs/screenshots/login.png)
 
 ---
 
